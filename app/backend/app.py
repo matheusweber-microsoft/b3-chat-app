@@ -60,9 +60,12 @@ from config import (
     CONFIG_USER_UPLOAD_ENABLED,
     CONFIG_VECTOR_SEARCH_ENABLED,
 )
+from core.theme.application.use_cases.list_themes import ListTheme
 from core.authentication import AuthenticationHelper
 from decorators import authenticated, authenticated_path
 from error import error_dict, error_response
+from services.cosmosDB.cosmosRepository import CosmosRepository
+from services.cosmosDB.repositories.cosmosDB_theme_repository import ThemeRepository
 from prepdocs import (
     clean_key_if_exists,
     setup_embeddings_service,
@@ -174,6 +177,11 @@ class JSONEncoder(json.JSONEncoder):
             return dataclasses.asdict(o)
         return super().default(o)
 
+cosmos_repository = None
+
+if os.getenv("CONNECTION_STRING_COSMOS_DB"):
+        cosmos_repository = CosmosRepository(connection_string=os.getenv(
+            'CONNECTION_STRING_COSMOS_DB'), database_name=os.getenv('DATABASE_NAME'))
 
 async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str, None]:
     try:
@@ -183,6 +191,22 @@ async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str,
         logging.exception("Exception while generating response stream: %s", error)
         yield json.dumps(error_dict(error))
 
+@bp.route("/themes", methods=["GET"])
+async def themes():
+    if cosmos_repository is None:
+        return jsonify({'error': 'Cosmos DB not configured'}), 400
+
+    use_case = ListTheme(ThemeRepository(cosmos_repository))
+
+    try:
+        response = use_case.execute()
+        themes_json = [theme.to_dict() for theme in response.data]
+        logging.info("Themes retrieved successfully")
+        return themes_json, 200
+    
+    except Exception as e:
+        logging.error(f"Error getting themes: {str(e)}")
+        return jsonify({'error': str(e)}), 400
 
 @bp.route("/chat", methods=["POST"])
 @authenticated
