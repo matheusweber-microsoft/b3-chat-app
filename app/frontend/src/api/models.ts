@@ -90,3 +90,8 @@ export type Config = {
 export type SimpleAPIResponse = {
     message?: string;
 };
+
+export type ThemesResponse = {
+    themeId: string;
+    themeName: string;
+}

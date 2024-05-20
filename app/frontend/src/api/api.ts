@@ -1,6 +1,6 @@
 const BACKEND_URI = "";
 
-import { ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, Config, SimpleAPIResponse } from "./models";
+import { ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, Config, SimpleAPIResponse, ThemesResponse } from "./models";
 import { useLogin, appServicesToken } from "../authConfig";
 
 export function getHeaders(idToken: string | undefined): Record<string, string> {
@@ -90,5 +90,18 @@ export async function listUploadedFilesApi(idToken: string): Promise<string[]> {
     }
 
     const dataResponse: string[] = await response.json();
+    return dataResponse;
+}
+
+export async function listThemes(): Promise<ThemesResponse[]> {
+     const response = await fetch(`${BACKEND_URI}/themes`, {
+        method: "GET"
+    });
+
+    if (!response.ok) {
+        throw new Error(`Listing themes failed: ${response.statusText}`);
+    }
+
+    const dataResponse: ThemesResponse[] = await response.json();
     return dataResponse;
 }

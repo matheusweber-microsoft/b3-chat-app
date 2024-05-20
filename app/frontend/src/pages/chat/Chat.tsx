@@ -14,7 +14,9 @@ import {
     ChatAppRequest,
     ResponseMessage,
     VectorFieldOptions,
-    GPT4VInput
+    GPT4VInput,
+    ThemesResponse,
+    listThemes
 } from "../../api";
 import { Answer, AnswerError, AnswerLoading } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
@@ -29,6 +31,8 @@ import { VectorSettings } from "../../components/VectorSettings";
 import { useMsal } from "@azure/msal-react";
 import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
 import { GPT4VSettings } from "../../components/GPT4VSettings";
+import { ThemeSettings } from "../../components/ThemeSettings";
+import constraints from "../../constraints";
 
 const Chat = () => {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
@@ -66,6 +70,28 @@ const Chat = () => {
     const [showSemanticRankerOption, setShowSemanticRankerOption] = useState<boolean>(false);
     const [showVectorOption, setShowVectorOption] = useState<boolean>(false);
     const [showUserUpload, setShowUserUpload] = useState<boolean>(false);
+
+    const [theme, setTheme] = useState<string>("");
+
+    const [themes, setThemes] = useState<ThemesResponse[]>([]);
+
+    useEffect(() => {
+        listThemes()
+            .then(data => {
+                setThemes(data);
+
+                // make manualsoperations the default theme
+                for (const theme of data) {
+                    if (theme.themeId === constraints.defaultTheme) {
+                        setTheme(constraints.defaultTheme);
+                        break;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    }, []);
 
     const getConfig = async () => {
         configApi().then(config => {
@@ -478,6 +504,8 @@ const Chat = () => {
                             updateRetrievalMode={(retrievalMode: RetrievalMode) => setRetrievalMode(retrievalMode)}
                         />
                     )}
+
+                    {showVectorOption && <ThemeSettings theme={theme} themes={themes} updateTheme={setTheme} />}
 
                     {useLogin && (
                         <Checkbox
