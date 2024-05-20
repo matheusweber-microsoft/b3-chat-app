@@ -75,16 +75,33 @@ const Chat = () => {
 
     const [themes, setThemes] = useState<ThemesResponse[]>([]);
 
+    const updateTheme = (theme: string) => {
+        // add to cookies
+        document.cookie = `theme=${theme}; path=/; max-age=31536000`;
+        setTheme(theme);
+    };
+
     useEffect(() => {
         listThemes()
             .then(data => {
                 setThemes(data);
 
-                // make manualsoperations the default theme
-                for (const theme of data) {
-                    if (theme.themeId === constraints.defaultTheme) {
-                        setTheme(constraints.defaultTheme);
-                        break;
+                // set the theme from the cookie
+                const cookieTheme = document.cookie.split(";").find(c => c.trim().startsWith("theme="));
+                if (cookieTheme) {
+                    const themeId = cookieTheme.split("=")[1];
+                    for (const theme of data) {
+                        if (theme.themeId === themeId) {
+                            setTheme(themeId);
+                            break;
+                        }
+                    }
+                } else {
+                    for (const theme of data) {
+                        if (theme.themeId === constraints.defaultTheme) {
+                            setTheme(constraints.defaultTheme);
+                            break;
+                        }
                     }
                 }
             })
@@ -505,7 +522,7 @@ const Chat = () => {
                         />
                     )}
 
-                    {showVectorOption && <ThemeSettings theme={theme} themes={themes} updateTheme={setTheme} />}
+                    {showVectorOption && <ThemeSettings theme={theme} themes={themes} updateTheme={updateTheme} />}
 
                     {useLogin && (
                         <Checkbox
