@@ -60,6 +60,7 @@ from config import (
     CONFIG_USER_UPLOAD_ENABLED,
     CONFIG_VECTOR_SEARCH_ENABLED,
 )
+from cachetools import TTLCache
 from core.theme.application.use_cases.list_themes import ListTheme
 from core.authentication import AuthenticationHelper
 from decorators import authenticated, authenticated_path
@@ -80,6 +81,16 @@ bp = Blueprint("routes", __name__, static_folder="static")
 mimetypes.add_type("application/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
 
+# Define a cache with a maximum size and TTL of 24 hours (86400 seconds)
+cache = TTLCache(maxsize=100, ttl=24 * 3600)
+
+
+def add_to_cache(key, value):
+    cache[key] = value
+
+
+def get_from_cache(key):
+    return cache.get(key, None)
 
 @bp.route("/")
 async def index():
@@ -193,6 +204,9 @@ async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str,
 
 @bp.route("/themes", methods=["GET"])
 async def themes():
+    if get_from_cache("themes"):
+        return get_from_cache("themes"), 200
+
     if cosmos_repository is None:
         return jsonify({'error': 'Cosmos DB not configured'}), 400
 
@@ -202,8 +216,10 @@ async def themes():
         response = use_case.execute()
         themes_json = [theme.to_dict() for theme in response.data]
         logging.info("Themes retrieved successfully")
+        add_to_cache("themes", themes_json)
+        logging.info("Themes cached successfully")
         return themes_json, 200
-    
+
     except Exception as e:
         logging.error(f"Error getting themes: {str(e)}")
         return jsonify({'error': str(e)}), 400
