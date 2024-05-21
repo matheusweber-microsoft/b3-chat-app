@@ -79,6 +79,7 @@ const Chat = () => {
         // add to cookies
         document.cookie = `theme=${theme}; path=/; max-age=31536000`;
         setTheme(theme);
+        clearChat();
     };
 
     useEffect(() => {
