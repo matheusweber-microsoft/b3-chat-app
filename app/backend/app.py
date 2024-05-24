@@ -232,11 +232,45 @@ async def chat(auth_claims: Dict[str, Any]):
     request_json = await request.get_json()
     context = request_json.get("context", {})
     context["auth_claims"] = auth_claims
+
+    AZURE_SEARCH_SERVICE = os.environ["AZURE_SEARCH_SERVICE"]
+    AZURE_KEY_VAULT_NAME = os.getenv("AZURE_KEY_VAULT_NAME")
+    AZURE_SEARCH_SECRET_NAME = os.getenv("AZURE_SEARCH_SECRET_NAME")
+
+    azure_credential = DefaultAzureCredential(
+        exclude_shared_token_cache_credential=True)
+
+    # Fetch any necessary secrets from Key Vault
+    search_key = None
+    if AZURE_KEY_VAULT_NAME:
+        async with SecretClient(
+            vault_url=f"https://{AZURE_KEY_VAULT_NAME}.vault.azure.net", credential=azure_credential
+        ) as key_vault_client:
+            search_key = (
+                # type: ignore[attr-defined]
+                AZURE_SEARCH_SECRET_NAME and (await key_vault_client.get_secret(AZURE_SEARCH_SECRET_NAME)).value
+            )
+
+    # Set up clients for AI Search and Storage
+    search_credential: Union[AsyncTokenCredential, AzureKeyCredential] = (
+        AzureKeyCredential(search_key) if search_key else azure_credential
+    )
+
+    search_client = SearchClient(
+        endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net",
+        index_name="manualsoperations-index-eng",
+        credential=search_credential,
+    )
+
+    current_app.config[CONFIG_CHAT_APPROACH].set_search_client(search_client) 
+    current_app.config[CONFIG_SEARCH_CLIENT] = search_client
+
     try:
         use_gpt4v = context.get("overrides", {}).get("use_gpt4v", False)
         approach: Approach
         if use_gpt4v and CONFIG_CHAT_VISION_APPROACH in current_app.config:
-            approach = cast(Approach, current_app.config[CONFIG_CHAT_VISION_APPROACH])
+            approach = cast(
+                Approach, current_app.config[CONFIG_CHAT_VISION_APPROACH])
         else:
             approach = cast(Approach, current_app.config[CONFIG_CHAT_APPROACH])
 
@@ -255,7 +289,6 @@ async def chat(auth_claims: Dict[str, Any]):
             return response
     except Exception as error:
         return error_response(error, "/chat")
-
 
 # Send MSAL.js settings to the client UI
 @bp.route("/auth_setup", methods=["GET"])

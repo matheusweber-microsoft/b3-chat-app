@@ -33,13 +33,13 @@ class Document:
     id: Optional[str]
     content: Optional[str]
     embedding: Optional[List[float]]
-    image_embedding: Optional[List[float]]
-    category: Optional[str]
     sourcepage: Optional[str]
-    sourcefile: Optional[str]
-    oids: Optional[List[str]]
-    groups: Optional[List[str]]
-    captions: List[QueryCaptionResult]
+    sourcefile: Optional[str] 
+    image_embedding: Optional[List[float]] = None
+    category: Optional[str] = None
+    oids: Optional[List[str]] = None
+    groups: Optional[List[str]] = None
+    captions: List[QueryCaptionResult] = None
     score: Optional[float] = None
     reranker_score: Optional[float] = None
 
@@ -48,12 +48,12 @@ class Document:
             "id": self.id,
             "content": self.content,
             "embedding": Document.trim_embedding(self.embedding),
-            "imageEmbedding": Document.trim_embedding(self.image_embedding),
-            "category": self.category,
+            # "imageEmbedding": Document.trim_embedding(self.image_embedding),
+            # "category": self.category,
             "sourcepage": self.sourcepage,
             "sourcefile": self.sourcefile,
-            "oids": self.oids,
-            "groups": self.groups,
+            # "oids": self.oids,
+            # "groups": self.groups,
             "captions": (
                 [
                     {
@@ -155,25 +155,21 @@ class Approach(ABC):
             results = await self.search_client.search(
                 search_text=query_text or "", filter=filter, top=top, vector_queries=vectors
             )
-
         documents = []
         async for page in results.by_page():
             async for document in page:
-                documents.append(
-                    Document(
+                document = Document(
                         id=document.get("id"),
                         content=document.get("content"),
-                        embedding=document.get("embedding"),
-                        image_embedding=document.get("imageEmbedding"),
-                        category=document.get("category"),
+                        embedding=document.get("contentvector"),
                         sourcepage=document.get("sourcepage"),
                         sourcefile=document.get("sourcefile"),
-                        oids=document.get("oids"),
-                        groups=document.get("groups"),
-                        captions=cast(List[QueryCaptionResult], document.get("@search.captions")),
                         score=document.get("@search.score"),
                         reranker_score=document.get("@search.reranker_score"),
                     )
+                
+                documents.append(
+                    document
                 )
 
             qualified_documents = [
@@ -217,9 +213,9 @@ class Approach(ABC):
 
     async def compute_text_embedding(self, q: str):
         SUPPORTED_DIMENSIONS_MODEL = {
-            "text-embedding-ada-002": False,
-            "text-embedding-3-small": True,
-            "text-embedding-3-large": True,
+            "text-embedding-ada-002": True,
+            "text-embedding-3-small": False,
+            "text-embedding-3-large": False,
         }
 
         class ExtraArgs(TypedDict, total=False):
@@ -231,11 +227,11 @@ class Approach(ABC):
         embedding = await self.openai_client.embeddings.create(
             # Azure OpenAI takes the deployment name as the model name
             model=self.embedding_deployment if self.embedding_deployment else self.embedding_model,
-            input=q,
-            **dimensions_args,
+            input=q
+            # **dimensions_args,
         )
         query_vector = embedding.data[0].embedding
-        return VectorizedQuery(vector=query_vector, k_nearest_neighbors=50, fields="embedding")
+        return VectorizedQuery(vector=query_vector, k_nearest_neighbors=50, fields="contentvector")
 
     async def compute_image_embedding(self, q: str):
         endpoint = urljoin(self.vision_endpoint, "computervision/retrieval:vectorizeText")

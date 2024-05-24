@@ -22,7 +22,8 @@ class ChatApproach(Approach, ABC):
 
     query_prompt_few_shots = [
         {"role": USER, "content": "How did crypto do last year?"},
-        {"role": ASSISTANT, "content": "Summarize Cryptocurrency Market Dynamics from last year"},
+        {"role": ASSISTANT,
+            "content": "Summarize Cryptocurrency Market Dynamics from last year"},
         {"role": USER, "content": "What are my health plans?"},
         {"role": ASSISTANT, "content": "Show available health plans"},
     ]
@@ -53,7 +54,7 @@ class ChatApproach(Approach, ABC):
         pass
 
     @abstractmethod
-    async def run_until_final_call(self, history, overrides, auth_claims, should_stream) -> tuple:
+    async def run_until_final_call(self, history, overrides, auth_claims, theme, should_stream) -> tuple:
         pass
 
     def get_system_prompt(self, override_prompt: Optional[str], follow_up_questions_prompt: str) -> str:
@@ -102,23 +103,29 @@ class ChatApproach(Approach, ABC):
 
         # Add examples to show the chat what responses we want. It will try to mimic any responses and make sure they match the rules laid out in the system message.
         for shot in reversed(few_shots):
-            message_builder.insert_message(shot.get("role"), shot.get("content"))
+            message_builder.insert_message(
+                shot.get("role"), shot.get("content"))
 
         append_index = len(few_shots) + 1
 
-        message_builder.insert_message(self.USER, user_content, index=append_index)
+        message_builder.insert_message(
+            self.USER, user_content, index=append_index)
 
         total_token_count = 0
         for existing_message in message_builder.messages:
-            total_token_count += message_builder.count_tokens_for_message(existing_message)
+            total_token_count += message_builder.count_tokens_for_message(
+                existing_message)
 
         newest_to_oldest = list(reversed(history[:-1]))
         for message in newest_to_oldest:
-            potential_message_count = message_builder.count_tokens_for_message(message)
+            potential_message_count = message_builder.count_tokens_for_message(
+                message)
             if (total_token_count + potential_message_count) > max_tokens:
-                logging.info("Reached max tokens of %d, history will be truncated", max_tokens)
+                logging.info(
+                    "Reached max tokens of %d, history will be truncated", max_tokens)
                 break
-            message_builder.insert_message(message["role"], message["content"], index=append_index)
+            message_builder.insert_message(
+                message["role"], message["content"], index=append_index)
             total_token_count += potential_message_count
         return message_builder.messages
 
@@ -130,13 +137,15 @@ class ChatApproach(Approach, ABC):
         session_state: Any = None,
     ) -> dict[str, Any]:
         extra_info, chat_coroutine = await self.run_until_final_call(
-            history, overrides, auth_claims, should_stream=False
+            history, overrides, auth_claims, theme="hr", should_stream=False
         )
         chat_completion_response: ChatCompletion = await chat_coroutine
-        chat_resp = chat_completion_response.model_dump()  # Convert to dict to make it JSON serializable
+        # Convert to dict to make it JSON serializable
+        chat_resp = chat_completion_response.model_dump()
         chat_resp["choices"][0]["context"] = extra_info
         if overrides.get("suggest_followup_questions"):
-            content, followup_questions = self.extract_followup_questions(chat_resp["choices"][0]["message"]["content"])
+            content, followup_questions = self.extract_followup_questions(
+                chat_resp["choices"][0]["message"]["content"])
             chat_resp["choices"][0]["message"]["content"] = content
             chat_resp["choices"][0]["context"]["followup_questions"] = followup_questions
         chat_resp["choices"][0]["session_state"] = session_state
@@ -150,7 +159,7 @@ class ChatApproach(Approach, ABC):
         session_state: Any = None,
     ) -> AsyncGenerator[dict, None]:
         extra_info, chat_coroutine = await self.run_until_final_call(
-            history, overrides, auth_claims, should_stream=True
+            history, overrides, auth_claims, theme="hr2", should_stream=True
         )
         yield {
             "choices": [
@@ -180,13 +189,14 @@ class ChatApproach(Approach, ABC):
                     if earlier_content:
                         event["choices"][0]["delta"]["content"] = earlier_content
                         yield event
-                    followup_content += content[content.index("<<") :]
+                    followup_content += content[content.index("<<"):]
                 elif followup_questions_started:
                     followup_content += content
                 else:
                     yield event
         if followup_content:
-            _, followup_questions = self.extract_followup_questions(followup_content)
+            _, followup_questions = self.extract_followup_questions(
+                followup_content)
             yield {
                 "choices": [
                     {

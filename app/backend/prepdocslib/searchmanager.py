@@ -88,7 +88,7 @@ class SearchManager:
                     analyzer_name=self.search_analyzer_name,
                 ),
                 SearchField(
-                    name="embedding",
+                    name="contentvector",
                     type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                     hidden=False,
                     searchable=True,
@@ -112,7 +112,7 @@ class SearchManager:
                     facetable=True,
                 ),
                 SimpleField(
-                    name="storageUrl",
+                    name="sourcefile",
                     type="Edm.String",
                     filterable=True,
                     facetable=False,
