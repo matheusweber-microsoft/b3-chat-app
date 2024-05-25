@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Quart: Run",
+      "type": "python",
+      "request": "launch",
+      "module": "quart",
+      "args": [
+        "--app",
+        "main:app",
+        "run",
+        "--port",
+        "50505",
+        "--host",
+        "localhost",
+        "--reload"
+      ],
+      "jinja": true,
+      "justMyCode": true
+    }
+  ]
+}
