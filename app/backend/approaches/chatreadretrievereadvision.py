@@ -33,7 +33,8 @@ class ChatReadRetrieveReadVisionApproach(ChatApproach):
         auth_helper: AuthenticationHelper,
         gpt4v_deployment: Optional[str],  # Not needed for non-Azure OpenAI
         gpt4v_model: str,
-        embedding_deployment: Optional[str],  # Not needed for non-Azure OpenAI or for retrieval_mode="text"
+        # Not needed for non-Azure OpenAI or for retrieval_mode="text"
+        embedding_deployment: Optional[str],
         embedding_model: str,
         embedding_dimensions: int,
         sourcepage_field: str,
@@ -82,20 +83,26 @@ class ChatReadRetrieveReadVisionApproach(ChatApproach):
         history: list[dict[str, str]],
         overrides: dict[str, Any],
         auth_claims: dict[str, Any],
+        theme: str,
         should_stream: bool = False,
     ) -> tuple[dict[str, Any], Coroutine[Any, Any, Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]]]:
         has_text = overrides.get("retrieval_mode") in ["text", "hybrid", None]
-        has_vector = overrides.get("retrieval_mode") in ["vectors", "hybrid", None]
-        vector_fields = overrides.get("vector_fields", ["embedding"])
-        use_semantic_captions = True if overrides.get("semantic_captions") and has_text else False
+        has_vector = overrides.get("retrieval_mode") in [
+            "vectors", "hybrid", None]
+        vector_fields = overrides.get("vector_fields", ["contentvector"])
+        use_semantic_captions = True if overrides.get(
+            "semantic_captions") and has_text else False
         top = overrides.get("top", 3)
         minimum_search_score = overrides.get("minimum_search_score", 0.0)
         minimum_reranker_score = overrides.get("minimum_reranker_score", 0.0)
         filter = self.build_filter(overrides, auth_claims)
-        use_semantic_ranker = True if overrides.get("semantic_ranker") and has_text else False
+        use_semantic_ranker = True if overrides.get(
+            "semantic_ranker") and has_text else False
 
-        include_gtpV_text = overrides.get("gpt4v_input") in ["textAndImages", "texts", None]
-        include_gtpV_images = overrides.get("gpt4v_input") in ["textAndImages", "images", None]
+        include_gtpV_text = overrides.get("gpt4v_input") in [
+            "textAndImages", "texts", None]
+        include_gtpV_images = overrides.get("gpt4v_input") in [
+            "textAndImages", "images", None]
 
         original_user_query = history[-1]["content"]
 
@@ -107,7 +114,8 @@ class ChatReadRetrieveReadVisionApproach(ChatApproach):
             model_id=self.gpt4v_model,
             history=history,
             user_content=user_query_request,
-            max_tokens=self.chatgpt_token_limit - len(" ".join(user_query_request)),
+            max_tokens=self.chatgpt_token_limit -
+            len(" ".join(user_query_request)),
             few_shots=self.query_prompt_few_shots,
         )
 
@@ -119,7 +127,8 @@ class ChatReadRetrieveReadVisionApproach(ChatApproach):
             n=1,
         )
 
-        query_text = self.get_search_query(chat_completion, original_user_query)
+        query_text = self.get_search_query(
+            chat_completion, original_user_query)
 
         # STEP 2: Retrieve relevant documents from the search index with the GPT optimized query
 
@@ -148,7 +157,8 @@ class ChatReadRetrieveReadVisionApproach(ChatApproach):
             minimum_search_score,
             minimum_reranker_score,
         )
-        sources_content = self.get_sources_content(results, use_semantic_captions, use_image_citation=True)
+        sources_content = self.get_sources_content(
+            results, use_semantic_captions, use_image_citation=True)
         content = "\n".join(sources_content)
 
         # STEP 3: Generate a contextual and content specific answer using the search results and chat history
@@ -156,17 +166,20 @@ class ChatReadRetrieveReadVisionApproach(ChatApproach):
         # Allow client to replace the entire prompt, or to inject into the existing prompt using >>>
         system_message = self.get_system_prompt(
             overrides.get("prompt_template"),
-            self.follow_up_questions_prompt_content if overrides.get("suggest_followup_questions") else "",
+            self.follow_up_questions_prompt_content if overrides.get(
+                "suggest_followup_questions") else "",
         )
 
         response_token_limit = 1024
         messages_token_limit = self.chatgpt_token_limit - response_token_limit
 
-        user_content: list[ChatCompletionContentPartParam] = [{"text": original_user_query, "type": "text"}]
+        user_content: list[ChatCompletionContentPartParam] = [
+            {"text": original_user_query, "type": "text"}]
         image_list: list[ChatCompletionContentPartImageParam] = []
 
         if include_gtpV_text:
-            user_content.append({"text": "\n\nSources:\n" + content, "type": "text"})
+            user_content.append(
+                {"text": "\n\nSources:\n" + content, "type": "text"})
         if include_gtpV_images:
             for result in results:
                 url = await fetch_image(self.blob_container_client, result)
@@ -194,7 +207,8 @@ class ChatReadRetrieveReadVisionApproach(ChatApproach):
                     "Prompt to generate search query",
                     [str(message) for message in query_messages],
                     (
-                        {"model": self.gpt4v_model, "deployment": self.gpt4v_deployment}
+                        {"model": self.gpt4v_model,
+                            "deployment": self.gpt4v_deployment}
                         if self.gpt4v_deployment
                         else {"model": self.gpt4v_model}
                     ),
@@ -218,7 +232,8 @@ class ChatReadRetrieveReadVisionApproach(ChatApproach):
                     "Prompt to generate answer",
                     [str(message) for message in messages],
                     (
-                        {"model": self.gpt4v_model, "deployment": self.gpt4v_deployment}
+                        {"model": self.gpt4v_model,
+                            "deployment": self.gpt4v_deployment}
                         if self.gpt4v_deployment
                         else {"model": self.gpt4v_model}
                     ),

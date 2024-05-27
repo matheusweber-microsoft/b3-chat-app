@@ -5,7 +5,7 @@ import logging
 import mimetypes
 import os
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, Union, cast
+from typing import Any, AsyncGenerator, Dict, Union, cast, List
 
 from azure.core.credentials import AzureKeyCredential
 from azure.core.credentials_async import AsyncTokenCredential
@@ -202,46 +202,109 @@ async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str,
         logging.exception("Exception while generating response stream: %s", error)
         yield json.dumps(error_dict(error))
 
+async def fetch_themes() -> List[Dict[str, Any]]:
+    themes = get_from_cache("themes")
+
+    if not themes:
+        if not cosmos_repository:
+            return jsonify({'error': 'Cosmos DB not configured'}), 400
+
+        else:
+            use_case = ListTheme(ThemeRepository(cosmos_repository))
+            try:
+                response = use_case.execute()
+                themes_json = [theme.to_dict() for theme in response.data]
+                logging.info("Themes retrieved successfully")
+                add_to_cache("themes", themes_json)
+                logging.info("Themes cached successfully")
+                themes = themes_json
+            except Exception as e:
+                logging.error(f"Error getting themes: {str(e)}")
+                return jsonify({'error': str(e)}), 400
+
+    return themes
+
+
 @bp.route("/themes", methods=["GET"])
 async def themes():
     if get_from_cache("themes"):
         return get_from_cache("themes"), 200
 
-    if cosmos_repository is None:
-        return jsonify({'error': 'Cosmos DB not configured'}), 400
+    return await fetch_themes()
 
-    use_case = ListTheme(ThemeRepository(cosmos_repository))
-
-    try:
-        response = use_case.execute()
-        themes_json = [theme.to_dict() for theme in response.data]
-        logging.info("Themes retrieved successfully")
-        add_to_cache("themes", themes_json)
-        logging.info("Themes cached successfully")
-        return themes_json, 200
-
-    except Exception as e:
-        logging.error(f"Error getting themes: {str(e)}")
-        return jsonify({'error': str(e)}), 400
 
 @bp.route("/chat", methods=["POST"])
 @authenticated
 async def chat(auth_claims: Dict[str, Any]):
+
     if not request.is_json:
         return jsonify({"error": "request must be json"}), 415
     request_json = await request.get_json()
     context = request_json.get("context", {})
     context["auth_claims"] = auth_claims
+
+    theme_id = context["overrides"]["theme_id"]
+    
+    if not theme_id:
+        return jsonify({'error': 'theme_id not found'}), 400
+    
+    themes = await fetch_themes()
+
+    selected_theme = next(
+        (theme for theme in themes if theme["themeId"] == theme_id), None)
+
+    if not selected_theme:
+        return jsonify({'error': 'Theme not found'}), 400
+
+    AZURE_SEARCH_SERVICE = os.environ["AZURE_SEARCH_SERVICE"]
+    AZURE_KEY_VAULT_NAME = os.getenv("AZURE_KEY_VAULT_NAME")
+    AZURE_SEARCH_SECRET_NAME = os.getenv("AZURE_SEARCH_SECRET_NAME")
+
+    azure_credential = DefaultAzureCredential(
+        exclude_shared_token_cache_credential=True)
+
+    # Fetch any necessary secrets from Key Vault
+    search_key = None
+    if AZURE_KEY_VAULT_NAME:
+        async with SecretClient(
+            vault_url=f"https://{AZURE_KEY_VAULT_NAME}.vault.azure.net", credential=azure_credential
+        ) as key_vault_client:
+            search_key = (
+                # type: ignore[attr-defined]
+                AZURE_SEARCH_SECRET_NAME and (await key_vault_client.get_secret(AZURE_SEARCH_SECRET_NAME)).value
+            )
+
+    # Set up clients for AI Search and Storage
+    search_credential: Union[AsyncTokenCredential, AzureKeyCredential] = (
+        AzureKeyCredential(search_key) if search_key else azure_credential
+    )
+
+    index_name = selected_theme["assistantConfig"]["searchIndexName"]
+
+    if not index_name:
+        return jsonify({'error': 'Index name not found'}), 400
+
+    search_client = SearchClient(
+        endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net",
+        index_name=index_name,
+        credential=search_credential,
+    )
+
+    current_app.config[CONFIG_CHAT_APPROACH].set_search_client(search_client)
+    current_app.config[CONFIG_SEARCH_CLIENT] = search_client
+
     try:
         use_gpt4v = context.get("overrides", {}).get("use_gpt4v", False)
         approach: Approach
         if use_gpt4v and CONFIG_CHAT_VISION_APPROACH in current_app.config:
-            approach = cast(Approach, current_app.config[CONFIG_CHAT_VISION_APPROACH])
+            approach = cast(
+                Approach, current_app.config[CONFIG_CHAT_VISION_APPROACH])
         else:
             approach = cast(Approach, current_app.config[CONFIG_CHAT_APPROACH])
 
         result = await approach.run(
             request_json["messages"],
+            theme=selected_theme,
             stream=request_json.get("stream", False),
             context=context,
             session_state=request_json.get("session_state"),
@@ -255,7 +318,6 @@ async def chat(auth_claims: Dict[str, Any]):
             return response
     except Exception as error:
         return error_response(error, "/chat")
-
 
 # Send MSAL.js settings to the client UI
 @bp.route("/auth_setup", methods=["GET"])

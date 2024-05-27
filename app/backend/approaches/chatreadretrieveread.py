@@ -30,7 +30,8 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         openai_client: AsyncOpenAI,
         chatgpt_model: str,
         chatgpt_deployment: Optional[str],  # Not needed for non-Azure OpenAI
-        embedding_deployment: Optional[str],  # Not needed for non-Azure OpenAI or for retrieval_mode="text"
+        # Not needed for non-Azure OpenAI or for retrieval_mode="text"
+        embedding_deployment: Optional[str],
         embedding_model: str,
         embedding_dimensions: int,
         sourcepage_field: str,
@@ -51,6 +52,11 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         self.query_language = query_language
         self.query_speller = query_speller
         self.chatgpt_token_limit = get_token_limit(chatgpt_model)
+        
+    # setter for search_client
+    
+    def set_search_client(self, search_client: SearchClient):
+        self.search_client = search_client
 
     @property
     def system_message_chat_conversation(self):
@@ -77,6 +83,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         history: list[dict[str, str]],
         overrides: dict[str, Any],
         auth_claims: dict[str, Any],
+        theme: str,
         should_stream: Literal[True],
     ) -> tuple[dict[str, Any], Coroutine[Any, Any, AsyncStream[ChatCompletionChunk]]]: ...
 
@@ -85,17 +92,27 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         history: list[dict[str, str]],
         overrides: dict[str, Any],
         auth_claims: dict[str, Any],
+        theme: any,
         should_stream: bool = False,
     ) -> tuple[dict[str, Any], Coroutine[Any, Any, Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]]]:
+        
+        self.query_prompt_few_shots = theme["assistantConfig"]["queryPromptFewShots"]
+        self.follow_up_questions_prompt_content = theme["assistantConfig"]["followUpQuestionsPrompt"]
+        self.query_prompt_template = theme["assistantConfig"]["queryPromptTemplate"]
+
+
         has_text = overrides.get("retrieval_mode") in ["text", "hybrid", None]
-        has_vector = overrides.get("retrieval_mode") in ["vectors", "hybrid", None]
-        use_semantic_captions = True if overrides.get("semantic_captions") and has_text else False
+        has_vector = overrides.get("retrieval_mode") in [
+            "vectors", "hybrid", None]
+        use_semantic_captions = True if overrides.get(
+            "semantic_captions") and has_text else False
         top = overrides.get("top", 3)
         minimum_search_score = overrides.get("minimum_search_score", 0.0)
         minimum_reranker_score = overrides.get("minimum_reranker_score", 0.0)
 
         filter = self.build_filter(overrides, auth_claims)
-        use_semantic_ranker = True if overrides.get("semantic_ranker") and has_text else False
+        use_semantic_ranker = True if overrides.get(
+            "semantic_ranker") and has_text else False
 
         original_user_query = history[-1]["content"]
         user_query_request = "Generate search query for: " + original_user_query
@@ -135,14 +152,17 @@ class ChatReadRetrieveReadApproach(ChatApproach):
             # Azure OpenAI takes the deployment name as the model name
             model=self.chatgpt_deployment if self.chatgpt_deployment else self.chatgpt_model,
             temperature=0.0,  # Minimize creativity for search query generation
-            max_tokens=100,  # Setting too low risks malformed JSON, setting too high may affect performance
+            # Setting too low risks malformed JSON, setting too high may affect performance
+            max_tokens=100,
             n=1,
             tools=tools,
             tool_choice="auto",
         )
 
-        query_text = self.get_search_query(chat_completion, original_user_query)
+        query_text = self.get_search_query(
+            chat_completion, original_user_query)
 
+       
         # STEP 2: Retrieve relevant documents from the search index with the GPT optimized query
 
         # If retrieval mode includes vectors, compute an embedding for the query
@@ -165,7 +185,8 @@ class ChatReadRetrieveReadApproach(ChatApproach):
             minimum_reranker_score,
         )
 
-        sources_content = self.get_sources_content(results, use_semantic_captions, use_image_citation=False)
+        sources_content = self.get_sources_content(
+            results, use_semantic_captions, use_image_citation=False)
         content = "\n".join(sources_content)
 
         # STEP 3: Generate a contextual and content specific answer using the search results and chat history
@@ -173,7 +194,8 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         # Allow client to replace the entire prompt, or to inject into the exiting prompt using >>>
         system_message = self.get_system_prompt(
             overrides.get("prompt_template"),
-            self.follow_up_questions_prompt_content if overrides.get("suggest_followup_questions") else "",
+            self.follow_up_questions_prompt_content if overrides.get(
+                "suggest_followup_questions") else "",
         )
 
         response_token_limit = 1024
@@ -196,7 +218,8 @@ class ChatReadRetrieveReadApproach(ChatApproach):
                     "Prompt to generate search query",
                     [str(message) for message in query_messages],
                     (
-                        {"model": self.chatgpt_model, "deployment": self.chatgpt_deployment}
+                        {"model": self.chatgpt_model,
+                            "deployment": self.chatgpt_deployment}
                         if self.chatgpt_deployment
                         else {"model": self.chatgpt_model}
                     ),
@@ -220,7 +243,8 @@ class ChatReadRetrieveReadApproach(ChatApproach):
                     "Prompt to generate answer",
                     [str(message) for message in messages],
                     (
-                        {"model": self.chatgpt_model, "deployment": self.chatgpt_deployment}
+                        {"model": self.chatgpt_model,
+                            "deployment": self.chatgpt_deployment}
                         if self.chatgpt_deployment
                         else {"model": self.chatgpt_model}
                     ),
