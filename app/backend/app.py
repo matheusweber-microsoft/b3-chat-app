@@ -5,7 +5,7 @@ import mimetypes
 import os
 from pathlib import Path
 from typing import Any, AsyncGenerator, Dict, Union, cast
-from app.backend.services.keyVault.keyVault import KeyVault
+from services.keyVault.keyVault import KeyVault
 from core.log import Logger
 
 from azure.core.credentials import AzureKeyCredential

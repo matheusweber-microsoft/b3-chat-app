@@ -1,5 +1,4 @@
 import logging
-
 import pytest
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.indexes.aio import SearchIndexClient
