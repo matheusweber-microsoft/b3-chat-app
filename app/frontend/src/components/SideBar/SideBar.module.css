@@ -1,0 +1,55 @@
+
+.container {
+  background-color: #e3e5e7 ;
+  min-height: 100vh;
+  width: 16rem;
+  /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); */
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-left: 2rem;
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+}
+
+.logoTitle {
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin-left: 0.5rem;
+  color: #002C63;
+}
+
+.divider {
+  height: 0.5px;
+  width: 100%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  background-color: #b2b6bc;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  float: left;
+}
+
+.menuItem {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-left: 1.25rem;
+}
+
+.menuLink {
+  display: flex;
+  align-items: center;
+}
+
+.menuText {
+  padding-left: 0.5rem;
+  float: left;
+}
