@@ -1,4 +1,4 @@
-import logging
+from core.log import Logger
 from functools import wraps
 from typing import Any, Callable, Dict
 
@@ -16,6 +16,7 @@ def authenticated_path(route_fn: Callable[[str, Dict[str, Any]], Any]):
 
     @wraps(route_fn)
     async def auth_handler(path=""):
+        logging = Logger()
         # If authentication is enabled, validate the user can access the file
         auth_helper = current_app.config[CONFIG_AUTH_CLIENT]
         search_client = current_app.config[CONFIG_SEARCH_CLIENT]
@@ -26,7 +27,7 @@ def authenticated_path(route_fn: Callable[[str, Dict[str, Any]], Any]):
         except AuthError:
             abort(403)
         except Exception as error:
-            logging.exception("Problem checking path auth %s", error)
+            logging.error("Problem checking path auth %s", error)
             return error_response(error, route="/content")
 
         if not authorized:

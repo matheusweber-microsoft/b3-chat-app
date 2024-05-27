@@ -1,4 +1,4 @@
-import logging
+from logging import Logger
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field

@@ -1,7 +1,7 @@
 from azure.cosmos import CosmosClient, PartitionKey
 import pymongo
 import uuid
-import logging
+from core.log import Logger
 
 
 class CosmosRepository:
@@ -9,12 +9,13 @@ class CosmosRepository:
         # A conexão é inicializada usando a connection string
         self.client = pymongo.MongoClient(connection_string)
         self.db = self.client[database_name]
+        self.logging = Logger()
         if database_name not in self.client.list_database_names():
-            logging.error("Database '{}' not found.".format(database_name))
+            self.logging.error("Database '{}' not found.".format(database_name))
             raise Exception("Database '{}' not found.".format(database_name))
         else:
             print("Using database: '{}'.\n".format(database_name))
-        logging.debug("Connected to database: '{}'.\n".format(database_name))
+        self.logging.info("Connected to database: '{}'.\n".format(database_name))
 
     def save(self, collection_name, item) -> None:
         collection = self.db.get_collection(collection_name)

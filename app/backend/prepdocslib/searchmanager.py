@@ -1,5 +1,5 @@
 import asyncio
-import logging
+from core.log import Logger
 import os
 from typing import List, Optional
 
@@ -25,8 +25,6 @@ from .embeddings import OpenAIEmbeddings
 from .listfilestrategy import File
 from .strategy import SearchInfo
 from .textsplitter import SplitPage
-
-logger = logging.getLogger("ingester")
 
 
 class Section:
@@ -63,9 +61,10 @@ class SearchManager:
         # Integrated vectorization uses the ada-002 model with 1536 dimensions
         self.embedding_dimensions = self.embeddings.open_ai_dimensions if self.embeddings else 1536
         self.search_images = search_images
+        self.logger = Logger()
 
     async def create_index(self, vectorizers: Optional[List[VectorSearchVectorizer]] = None):
-        logger.info("Ensuring search index %s exists", self.search_info.index_name)
+        self.logger.info("Ensuring search index %s exists", self.search_info.index_name)
 
         async with self.search_info.create_search_index_client() as search_index_client:
             fields = [
@@ -183,13 +182,13 @@ class SearchManager:
                 ),
             )
             if self.search_info.index_name not in [name async for name in search_index_client.list_index_names()]:
-                logger.info("Creating %s search index", self.search_info.index_name)
+                self.logger.info("Creating %s search index", self.search_info.index_name)
                 await search_index_client.create_index(index)
             else:
-                logger.info("Search index %s already exists", self.search_info.index_name)
+                self.logger.info("Search index %s already exists", self.search_info.index_name)
                 index_definition = await search_index_client.get_index(self.search_info.index_name)
                 if not any(field.name == "storageUrl" for field in index_definition.fields):
-                    logger.info("Adding storageUrl field to index %s", self.search_info.index_name)
+                    self.logger.info("Adding storageUrl field to index %s", self.search_info.index_name)
                     index_definition.fields.append(
                         SimpleField(
                             name="storageUrl",
@@ -245,7 +244,7 @@ class SearchManager:
                 await search_client.upload_documents(documents)
 
     async def remove_content(self, path: Optional[str] = None, only_oid: Optional[str] = None):
-        logger.info(
+        self.logger.info(
             "Removing sections from '{%s or '<all>'}' from search index '%s'", path, self.search_info.index_name
         )
         async with self.search_info.create_search_client() as search_client:
@@ -274,6 +273,6 @@ class SearchManager:
                     else:
                         continue
                 removed_docs = await search_client.delete_documents(documents_to_remove)
-                logger.info("Removed %d sections from index", len(removed_docs))
+                self.logger.info("Removed %d sections from index", len(removed_docs))
                 # It can take a few seconds for search results to reflect changes, so wait a bit
                 await asyncio.sleep(2)

@@ -1,5 +1,5 @@
 import json
-import logging
+from core.log import Logger
 import re
 from abc import ABC, abstractmethod
 from typing import Any, AsyncGenerator, Optional, Union
@@ -98,6 +98,7 @@ class ChatApproach(Approach, ABC):
         max_tokens: int,
         few_shots=[],
     ) -> list[ChatCompletionMessageParam]:
+        logging = Logger()
         message_builder = MessageBuilder(system_prompt, model_id)
 
         # Add examples to show the chat what responses we want. It will try to mimic any responses and make sure they match the rules laid out in the system message.

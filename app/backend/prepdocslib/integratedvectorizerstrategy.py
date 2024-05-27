@@ -1,4 +1,4 @@
-import logging
+from core.log import Logger
 from typing import Optional
 
 from azure.search.documents.indexes._generated.models import (
@@ -28,7 +28,6 @@ from .listfilestrategy import ListFileStrategy
 from .searchmanager import SearchManager
 from .strategy import DocumentAction, SearchInfo, Strategy
 
-logger = logging.getLogger("ingester")
 
 
 class IntegratedVectorizerStrategy(Strategy):
@@ -62,6 +61,7 @@ class IntegratedVectorizerStrategy(Strategy):
         self.use_acls = use_acls
         self.category = category
         self.search_info = search_info
+        self.logger = Logger()
 
     async def create_embedding_skill(self, index_name: str):
         skillset_name = f"{index_name}-skillset"
@@ -157,7 +157,7 @@ class IntegratedVectorizerStrategy(Strategy):
         )
 
         await ds_client.create_or_update_data_source_connection(data_source_connection)
-        logger.info("Search indexer data source connection updated.")
+        self.logger.info("Search indexer data source connection updated.")
 
         embedding_skillset = await self.create_embedding_skill(self.search_info.index_name)
         await ds_client.create_or_update_skillset(embedding_skillset)
@@ -199,6 +199,6 @@ class IntegratedVectorizerStrategy(Strategy):
         await indexer_client.run_indexer(indexer_name)
         await indexer_client.close()
 
-        logger.info(
+        self.logger.info(
             f"Successfully created index, indexer: {indexer_result.name}, and skillset. Please navigate to search service in Azure Portal to view the status of the indexer."
         )

@@ -1,4 +1,4 @@
-import logging
+from core.log import Logger
 import re
 from typing import IO, AsyncGenerator
 
@@ -6,8 +6,6 @@ from bs4 import BeautifulSoup
 
 from .page import Page
 from .parser import Parser
-
-logger = logging.getLogger("ingester")
 
 
 def cleanup_data(data: str) -> str:
@@ -31,6 +29,7 @@ class LocalHTMLParser(Parser):
     """Parses HTML text into Page objects."""
 
     async def parse(self, content: IO) -> AsyncGenerator[Page, None]:
+        logger = Logger()
         """Parses the given content.
         To learn more, please visit https://pypi.org/project/beautifulsoup4/
         Args:

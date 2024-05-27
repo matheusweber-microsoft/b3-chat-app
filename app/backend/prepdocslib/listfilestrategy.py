@@ -1,6 +1,6 @@
 import base64
 import hashlib
-import logging
+from core.log import Logger
 import os
 import re
 import tempfile
@@ -13,7 +13,6 @@ from azure.storage.filedatalake.aio import (
     DataLakeServiceClient,
 )
 
-logger = logging.getLogger("ingester")
 
 
 class File:
@@ -67,6 +66,7 @@ class LocalListFileStrategy(ListFileStrategy):
 
     def __init__(self, path_pattern: str):
         self.path_pattern = path_pattern
+        self.logger = Logger()
 
     async def list_paths(self) -> AsyncGenerator[str, None]:
         async for p in self._list_paths(self.path_pattern):
@@ -101,7 +101,7 @@ class LocalListFileStrategy(ListFileStrategy):
                 stored_hash = md5_f.read()
 
         if stored_hash and stored_hash.strip() == existing_hash.strip():
-            logger.info("Skipping %s, no changes detected.", path)
+            self.logger.info("Skipping %s, no changes detected.", path)
             return True
 
         # Write the hash
@@ -170,8 +170,8 @@ class ADLSGen2ListFileStrategy(ListFileStrategy):
                             acls["groups"].append(acl_parts[1])
                     yield File(content=open(temp_file_path, "rb"), acls=acls, url=file_client.url)
                 except Exception as data_lake_exception:
-                    logger.error(f"\tGot an error while reading {path} -> {data_lake_exception} --> skipping file")
+                    self.logger.error(f"\tGot an error while reading {path} -> {data_lake_exception} --> skipping file")
                     try:
                         os.remove(temp_file_path)
                     except Exception as file_delete_exception:
-                        logger.error(f"\tGot an error while deleting {temp_file_path} -> {file_delete_exception}")
+                        self.logger.error(f"\tGot an error while deleting {temp_file_path} -> {file_delete_exception}")
