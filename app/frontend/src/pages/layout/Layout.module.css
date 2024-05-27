@@ -1,78 +1,45 @@
+ .containerBox {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+} 
+
+/* .containerBox {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+}
+
+.content {
+  flex: 1;
+}
+
+.main {
+  margin-top: 1.5rem;
+  margin-right: 1.5rem;
+  margin-left: 1.5rem;
+} */
 .layout {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex: 1;
 }
 
 .header {
-    background-color: #222222;
-    color: #f2f2f2;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  box-shadow: 0 0px 10px -10px var(#000);
+  background-color: #f6f6f7;
 }
 
-.headerContainer {
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    margin-right: 12px;
-    margin-left: 12px;
+.headerContent {
+  display: flex;
 }
 
-.headerTitleContainer {
-    display: flex;
-    align-items: center;
-    margin-right: 40px;
-    color: #f2f2f2;
-    text-decoration: none;
-}
-
-.headerLogo {
-    height: 40px;
-}
-
-.headerTitle {
-    margin-left: 12px;
-    font-weight: 600;
-}
-
-.headerNavList {
-    display: flex;
-    list-style: none;
-    padding-left: 0;
-}
-
-.headerNavPageLink {
-    color: #f2f2f2;
-    text-decoration: none;
-    opacity: 0.75;
-
-    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-    transition-duration: 500ms;
-    transition-property: opacity;
-}
-
-.headerNavPageLink:hover {
-    opacity: 1;
-}
-
-.headerNavPageLinkActive {
-    color: #f2f2f2;
-    text-decoration: none;
-}
-
-.headerNavLeftMargin {
-    margin-left: 20px;
-}
-
-.headerRightText {
-    font-weight: normal;
-    margin-left: 40px;
-}
-
-.microsoftLogo {
-    height: 23px;
-    font-weight: 600;
-}
-
-.githubLogo {
-    height: 20px;
+.logoTitle {
+  font-weight: bold;
+  margin: 1rem;
+  color: #002C63;
 }
