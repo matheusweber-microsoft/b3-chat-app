@@ -5,7 +5,7 @@ import logging
 import mimetypes
 import os
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, Union, cast
+from typing import Any, AsyncGenerator, Dict, Union, cast, List
 
 from azure.core.credentials import AzureKeyCredential
 from azure.core.credentials_async import AsyncTokenCredential
@@ -202,36 +202,59 @@ async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str,
         logging.exception("Exception while generating response stream: %s", error)
         yield json.dumps(error_dict(error))
 
+async def fetch_themes() -> List[Dict[str, Any]]:
+    themes = get_from_cache("themes")
+
+    if not themes:
+        if not cosmos_repository:
+            return jsonify({'error': 'Cosmos DB not configured'}), 400
+
+        else:
+            use_case = ListTheme(ThemeRepository(cosmos_repository))
+            try:
+                response = use_case.execute()
+                themes_json = [theme.to_dict() for theme in response.data]
+                logging.info("Themes retrieved successfully")
+                add_to_cache("themes", themes_json)
+                logging.info("Themes cached successfully")
+                themes = themes_json
+            except Exception as e:
+                logging.error(f"Error getting themes: {str(e)}")
+                return jsonify({'error': str(e)}), 400
+
+    return themes
+
+
 @bp.route("/themes", methods=["GET"])
 async def themes():
     if get_from_cache("themes"):
         return get_from_cache("themes"), 200
 
-    if cosmos_repository is None:
-        return jsonify({'error': 'Cosmos DB not configured'}), 400
+    return await fetch_themes()
 
-    use_case = ListTheme(ThemeRepository(cosmos_repository))
-
-    try:
-        response = use_case.execute()
-        themes_json = [theme.to_dict() for theme in response.data]
-        logging.info("Themes retrieved successfully")
-        add_to_cache("themes", themes_json)
-        logging.info("Themes cached successfully")
-        return themes_json, 200
-
-    except Exception as e:
-        logging.error(f"Error getting themes: {str(e)}")
-        return jsonify({'error': str(e)}), 400
 
 @bp.route("/chat", methods=["POST"])
 @authenticated
 async def chat(auth_claims: Dict[str, Any]):
+
     if not request.is_json:
         return jsonify({"error": "request must be json"}), 415
     request_json = await request.get_json()
     context = request_json.get("context", {})
     context["auth_claims"] = auth_claims
+
+    theme_id = context["overrides"]["theme_id"]
+    
+    if not theme_id:
+        return jsonify({'error': 'theme_id not found'}), 400
+    
+    themes = await fetch_themes()
+
+    selected_theme = next(
+        (theme for theme in themes if theme["themeId"] == theme_id), None)
+
+    if not selected_theme:
+        return jsonify({'error': 'Theme not found'}), 400
 
     AZURE_SEARCH_SERVICE = os.environ["AZURE_SEARCH_SERVICE"]
     AZURE_KEY_VAULT_NAME = os.getenv("AZURE_KEY_VAULT_NAME")
@@ -256,13 +279,18 @@ async def chat(auth_claims: Dict[str, Any]):
         AzureKeyCredential(search_key) if search_key else azure_credential
     )
 
+    index_name = selected_theme["assistantConfig"]["searchIndexName"]
+
+    if not index_name:
+        return jsonify({'error': 'Index name not found'}), 400
+
     search_client = SearchClient(
         endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net",
-        index_name="manualsoperations-index-eng",
+        index_name=index_name,
         credential=search_credential,
     )
 
-    current_app.config[CONFIG_CHAT_APPROACH].set_search_client(search_client) 
+    current_app.config[CONFIG_CHAT_APPROACH].set_search_client(search_client)
     current_app.config[CONFIG_SEARCH_CLIENT] = search_client
 
     try:
@@ -276,6 +304,7 @@ async def chat(auth_claims: Dict[str, Any]):
 
         result = await approach.run(
             request_json["messages"],
+            theme=selected_theme,
             stream=request_json.get("stream", False),
             context=context,
             session_state=request_json.get("session_state"),

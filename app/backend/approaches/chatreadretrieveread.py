@@ -92,11 +92,14 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         history: list[dict[str, str]],
         overrides: dict[str, Any],
         auth_claims: dict[str, Any],
-        theme: str,
+        theme: any,
         should_stream: bool = False,
     ) -> tuple[dict[str, Any], Coroutine[Any, Any, Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]]]:
+        
+        self.query_prompt_few_shots = theme["assistantConfig"]["queryPromptFewShots"]
+        self.follow_up_questions_prompt_content = theme["assistantConfig"]["followUpQuestionsPrompt"]
+        self.query_prompt_template = theme["assistantConfig"]["queryPromptTemplate"]
 
-        print("theme: ", theme)
 
         has_text = overrides.get("retrieval_mode") in ["text", "hybrid", None]
         has_vector = overrides.get("retrieval_mode") in [
@@ -159,8 +162,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         query_text = self.get_search_query(
             chat_completion, original_user_query)
 
-        print("theme2: ", theme)
-
+       
         # STEP 2: Retrieve relevant documents from the search index with the GPT optimized query
 
         # If retrieval mode includes vectors, compute an embedding for the query

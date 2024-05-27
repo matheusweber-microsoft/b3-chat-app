@@ -131,13 +131,14 @@ class ChatApproach(Approach, ABC):
 
     async def run_without_streaming(
         self,
+        theme: any,
         history: list[dict[str, str]],
         overrides: dict[str, Any],
         auth_claims: dict[str, Any],
         session_state: Any = None,
     ) -> dict[str, Any]:
         extra_info, chat_coroutine = await self.run_until_final_call(
-            history, overrides, auth_claims, theme="hr", should_stream=False
+            history, overrides, auth_claims, theme=theme, should_stream=False
         )
         chat_completion_response: ChatCompletion = await chat_coroutine
         # Convert to dict to make it JSON serializable
@@ -153,13 +154,14 @@ class ChatApproach(Approach, ABC):
 
     async def run_with_streaming(
         self,
+        theme: any,
         history: list[dict[str, str]],
         overrides: dict[str, Any],
         auth_claims: dict[str, Any],
         session_state: Any = None,
     ) -> AsyncGenerator[dict, None]:
         extra_info, chat_coroutine = await self.run_until_final_call(
-            history, overrides, auth_claims, theme="hr2", should_stream=True
+            history, overrides, auth_claims, theme=theme, should_stream=True
         )
         yield {
             "choices": [
@@ -210,12 +212,12 @@ class ChatApproach(Approach, ABC):
             }
 
     async def run(
-        self, messages: list[dict], stream: bool = False, session_state: Any = None, context: dict[str, Any] = {}
+        self, messages: list[dict], theme: any, stream: bool = False, session_state: Any = None, context: dict[str, Any] = {}
     ) -> Union[dict[str, Any], AsyncGenerator[dict[str, Any], None]]:
         overrides = context.get("overrides", {})
         auth_claims = context.get("auth_claims", {})
 
         if stream is False:
-            return await self.run_without_streaming(messages, overrides, auth_claims, session_state)
+            return await self.run_without_streaming(theme, messages, overrides, auth_claims, session_state)
         else:
-            return self.run_with_streaming(messages, overrides, auth_claims, session_state)
+            return self.run_with_streaming(theme, messages, overrides, auth_claims, session_state)

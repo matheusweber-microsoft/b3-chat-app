@@ -34,6 +34,7 @@ export type ChatAppRequestOverrides = {
     use_gpt4v?: boolean;
     gpt4v_input?: GPT4VInput;
     vector_fields: VectorFieldOptions[];
+    theme_id?: string;
 };
 
 export type ResponseMessage = {
@@ -94,4 +95,4 @@ export type SimpleAPIResponse = {
 export type ThemesResponse = {
     themeId: string;
     themeName: string;
-}
+};
