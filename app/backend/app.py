@@ -146,7 +146,7 @@ async def content_file(path: str, auth_claims: Dict[str, Any]):
                 file_client = user_directory_client.get_file_client(path)
                 blob = await file_client.download_file()
             except ResourceNotFoundError:
-                logging.exception("Path not found in DataLake: %s", path)
+                logging.error(f"Path not found in DataLake: {str(path)}")
                 abort(404)
         else:
             abort(404)
@@ -202,11 +202,13 @@ async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str,
         async for event in r:
             yield json.dumps(event, ensure_ascii=False, cls=JSONEncoder) + "\n"
     except Exception as error:
-        logging.exception("Exception while generating response stream: %s", error)
+        logging.error(f"Exception while generating response stream: {str(error)}")
+
         yield json.dumps(error_dict(error))
 
 async def fetch_themes() -> List[Dict[str, Any]]:
     themes = get_from_cache("themes")
+    logging = Logger()
 
     if not themes:
         if not cosmos_repository:
@@ -230,7 +232,6 @@ async def fetch_themes() -> List[Dict[str, Any]]:
 
 @bp.route("/themes", methods=["GET"])
 async def themes():
-    logging = Logger()
     if get_from_cache("themes"):
         return get_from_cache("themes"), 200
 
