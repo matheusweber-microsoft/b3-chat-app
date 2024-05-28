@@ -17,7 +17,7 @@ export const ThemeSettings = ({ updateTheme, theme, themes }: Props) => {
     return (
         <Stack className={styles.container} tokens={{ childrenGap: 10 }}>
             <Dropdown
-                label="Theme options"
+                label="Opções de tema"
                 options={themes.map(th => ({ key: th.themeId, text: th.themeName, selected: th.themeId === theme, data: th }))}
                 required
                 onChange={onUpdateTheme}

@@ -214,7 +214,7 @@ export function Component(): JSX.Element {
                 </div>
             </div>
             <div className={styles.askBottomSection}>
-                {isLoading && <Spinner label="Generating answer" />}
+                {isLoading && <Spinner label="Gerando resposta" />}
                 {!lastQuestionRef.current && <ExampleList onExampleClicked={onExampleClicked} useGPT4V={useGPT4V} />}
                 {!isLoading && answer && !error && (
                     <div className={styles.askAnswerContainer}>
@@ -245,12 +245,12 @@ export function Component(): JSX.Element {
             </div>
 
             <Panel
-                headerText="Configure answer generation"
+                headerText="Configurar geração de respostas"
                 isOpen={isConfigPanelOpen}
                 isBlocking={false}
                 onDismiss={() => setIsConfigPanelOpen(false)}
-                closeButtonAriaLabel="Close"
-                onRenderFooterContent={() => <DefaultButton onClick={() => setIsConfigPanelOpen(false)}>Close</DefaultButton>}
+                closeButtonAriaLabel="Fechar"
+                onRenderFooterContent={() => <DefaultButton onClick={() => setIsConfigPanelOpen(false)}>Fechar</DefaultButton>}
                 isFooterAtBottom={true}
             >
                 <TextField
