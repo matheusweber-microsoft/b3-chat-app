@@ -3,7 +3,7 @@ from uuid import UUID
 from typing import Dict, Any
 from core.theme.domain.theme import SubTheme
 from core.theme.domain.theme_repository import ThemeRepository
-import logging
+from core.log import Logger
 
 
 @dataclass
@@ -28,6 +28,7 @@ class ThemeOutput:
 
 class ListTheme:
     def __init__(self, repository: ThemeRepository):
+        self.logging = Logger()
         self.repository = repository
 
     @dataclass
@@ -39,7 +40,7 @@ class ListTheme:
         data: list[ThemeOutput]
 
     def execute(self) -> Output:
-        logging.info("Starting to execute ListTheme use case")
+        self.logging.info("Starting to execute ListTheme use case")
 
         try:
             themes = self.repository.list()
@@ -55,8 +56,8 @@ class ListTheme:
                 )
                 for theme in themes
             ]
-            logging.info(f"Successfully listed {len(data)} themes")
+            self.logging.info(f"Successfully listed {len(data)} themes")
             return self.Output(data=data)
         except Exception as e:
-            logging.error("Failed to list themes", exc_info=True)
+            self.logging.error("Failed to list themes", exc_info=True)
             raise RuntimeError("An error occurred while listing themes") from e

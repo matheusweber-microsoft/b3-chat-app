@@ -1,5 +1,4 @@
 import logging
-
 import openai
 import openai.types
 import pytest

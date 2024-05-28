@@ -1,4 +1,4 @@
-import logging
+from core.log import Logger
 from abc import ABC
 from typing import Awaitable, Callable, List, Optional, Union
 from urllib.parse import urljoin
@@ -16,8 +16,6 @@ from tenacity import (
     wait_random_exponential,
 )
 from typing_extensions import TypedDict
-
-logger = logging.getLogger("ingester")
 
 
 class EmbeddingBatch:
@@ -55,12 +53,13 @@ class OpenAIEmbeddings(ABC):
         self.open_ai_model_name = open_ai_model_name
         self.open_ai_dimensions = open_ai_dimensions
         self.disable_batch = disable_batch
+        self.logger = Logger()
 
     async def create_client(self) -> AsyncOpenAI:
         raise NotImplementedError
 
     def before_retry_sleep(self, retry_state):
-        logger.info("Rate limited on the OpenAI embeddings API, sleeping before retrying...")
+        self.logger.info("Rate limited on the OpenAI embeddings API, sleeping before retrying...")
 
     def calculate_token_length(self, text: str):
         encoding = tiktoken.encoding_for_model(self.open_ai_model_name)
@@ -113,7 +112,7 @@ class OpenAIEmbeddings(ABC):
                         model=self.open_ai_model_name, input=batch.texts, **dimensions_args
                     )
                     embeddings.extend([data.embedding for data in emb_response.data])
-                    logger.info(
+                    self.logger.info(
                         "Computed embeddings in batch. Batch size: %d, Token count: %d",
                         len(batch.texts),
                         batch.token_length,
@@ -133,7 +132,7 @@ class OpenAIEmbeddings(ABC):
                 emb_response = await client.embeddings.create(
                     model=self.open_ai_model_name, input=text, **dimensions_args
                 )
-                logger.info("Computed embedding for text section. Character count: %d", len(text))
+                self.logger.info("Computed embedding for text section. Character count: %d", len(text))
 
         return emb_response.data[0].embedding
 
@@ -250,4 +249,4 @@ class ImageEmbeddings:
         return embeddings
 
     def before_retry_sleep(self, retry_state):
-        logger.info("Rate limited on the Vision embeddings API, sleeping before retrying...")
+        self.logger.info("Rate limited on the Vision embeddings API, sleeping before retrying...")

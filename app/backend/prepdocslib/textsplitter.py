@@ -1,12 +1,10 @@
-import logging
+from core.log import Logger
 from abc import ABC
 from typing import Generator, List
 
 import tiktoken
 
 from .page import Page, SplitPage
-
-logger = logging.getLogger("ingester")
 
 
 class TextSplitter(ABC):
@@ -194,6 +192,7 @@ class SentenceTextSplitter(TextSplitter):
 
             last_table_start = section_text.rfind("<table")
             if last_table_start > 2 * self.sentence_search_limit and last_table_start > section_text.rfind("</table"):
+                logger = Logger()
                 # If the section ends with an unclosed table, we need to start the next section with the table.
                 # If table starts inside sentence_search_limit, we ignore it, as that will cause an infinite loop for tables longer than MAX_SECTION_LENGTH
                 # If last table starts inside section_overlap, keep overlapping

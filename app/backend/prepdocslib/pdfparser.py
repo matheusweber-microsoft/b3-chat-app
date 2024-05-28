@@ -1,5 +1,5 @@
 import html
-import logging
+from core.log import Logger
 from typing import IO, AsyncGenerator, Union
 
 from azure.ai.documentintelligence.aio import DocumentIntelligenceClient
@@ -11,7 +11,6 @@ from pypdf import PdfReader
 from .page import Page
 from .parser import Parser
 
-logger = logging.getLogger("ingester")
 
 
 class LocalPdfParser(Parser):
@@ -21,6 +20,7 @@ class LocalPdfParser(Parser):
     """
 
     async def parse(self, content: IO) -> AsyncGenerator[Page, None]:
+        logger = Logger()
         logger.info("Extracting text from '%s' using local PDF parser (pypdf)", content.name)
 
         reader = PdfReader(content)
@@ -44,9 +44,10 @@ class DocumentAnalysisParser(Parser):
         self.model_id = model_id
         self.endpoint = endpoint
         self.credential = credential
+        self.logger = Logger()
 
     async def parse(self, content: IO) -> AsyncGenerator[Page, None]:
-        logger.info("Extracting text from '%s' using Azure Document Intelligence", content.name)
+        self.logger.info("Extracting text from '%s' using Azure Document Intelligence", content.name)
 
         async with DocumentIntelligenceClient(
             endpoint=self.endpoint, credential=self.credential

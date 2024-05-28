@@ -1,4 +1,4 @@
-import logging
+from core.log import Logger
 from typing import List, Optional
 
 from .blobmanager import BlobManager
@@ -7,8 +7,6 @@ from .fileprocessor import FileProcessor
 from .listfilestrategy import File, ListFileStrategy
 from .searchmanager import SearchManager, Section
 from .strategy import DocumentAction, SearchInfo, Strategy
-
-logger = logging.getLogger("ingester")
 
 
 async def parse_file(
@@ -19,6 +17,7 @@ async def parse_file(
 ) -> List[Section]:
     key = file.file_extension()
     processor = file_processors.get(key)
+    logger = Logger()
     if processor is None:
         logger.info("Skipping '%s', no parser found.", file.filename())
         return []

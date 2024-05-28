@@ -1,5 +1,5 @@
 import base64
-import logging
+from core.log import Logger
 import math
 import os
 import re
@@ -23,17 +23,18 @@ class ImageURL(TypedDict, total=False):
 
 
 async def download_blob_as_base64(blob_container_client: ContainerClient, file_path: str) -> Optional[str]:
+    logging = Logger()
     base_name, _ = os.path.splitext(file_path)
     image_filename = base_name + ".png"
     try:
         blob = await blob_container_client.get_blob_client(image_filename).download_blob()
         if not blob.properties:
-            logging.warning(f"No blob exists for {image_filename}")
+            logging.info(f"No blob exists for {image_filename}")
             return None
         img = base64.b64encode(await blob.readall()).decode("utf-8")
         return f"data:image/png;base64,{img}"
     except ResourceNotFoundError:
-        logging.warning(f"No blob exists for {image_filename}")
+        logging.info(f"No blob exists for {image_filename}")
         return None
 
 

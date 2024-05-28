@@ -1,7 +1,7 @@
 # Refactored from https://github.com/Azure-Samples/ms-identity-python-on-behalf-of
 
 import json
-import logging
+from core.log import Logger
 from typing import Any, Optional
 
 import aiohttp
@@ -206,6 +206,7 @@ class AuthenticationHelper:
         return groups
 
     async def get_auth_claims_if_enabled(self, headers: dict) -> dict[str, Any]:
+        logging = Logger()
         if not self.use_authentication:
             return {}
         try:
@@ -243,12 +244,12 @@ class AuthenticationHelper:
                 auth_claims["groups"] = await AuthenticationHelper.list_groups(graph_resource_access_token)
             return auth_claims
         except AuthError as e:
-            logging.exception("Exception getting authorization information - " + json.dumps(e.error))
+            logging.error("Exception getting authorization information - " + json.dumps(e.error))
             if self.require_access_control and not self.enable_unauthenticated_access:
                 raise
             return {}
         except Exception:
-            logging.exception("Exception getting authorization information")
+            logging.error("Exception getting authorization information")
             if self.require_access_control and not self.enable_unauthenticated_access:
                 raise
             return {}

@@ -1,10 +1,11 @@
 import dataclasses
 import io
 import json
-import logging
 import mimetypes
 import os
 from pathlib import Path
+from services.keyVault.keyVault import KeyVault
+from core.log import Logger
 from typing import Any, AsyncGenerator, Dict, Union, cast, List
 
 from azure.core.credentials import AzureKeyCredential
@@ -129,6 +130,7 @@ async def content_file(path: str, auth_claims: Dict[str, Any]):
     if path.find("#page=") > 0:
         path_parts = path.rsplit("#page=", 1)
         path = path_parts[0]
+    logging = Logger()
     logging.info("Opening file %s", path)
     blob_container_client: ContainerClient = current_app.config[CONFIG_BLOB_CONTAINER_CLIENT]
     blob: Union[BlobDownloader, DatalakeDownloader]
@@ -144,7 +146,7 @@ async def content_file(path: str, auth_claims: Dict[str, Any]):
                 file_client = user_directory_client.get_file_client(path)
                 blob = await file_client.download_file()
             except ResourceNotFoundError:
-                logging.exception("Path not found in DataLake: %s", path)
+                logging.error(f"Path not found in DataLake: {str(path)}")
                 abort(404)
         else:
             abort(404)
@@ -190,20 +192,23 @@ class JSONEncoder(json.JSONEncoder):
 
 cosmos_repository = None
 
-if os.getenv("CONNECTION_STRING_COSMOS_DB"):
-        cosmos_repository = CosmosRepository(connection_string=os.getenv(
-            'CONNECTION_STRING_COSMOS_DB'), database_name=os.getenv('DATABASE_NAME'))
+if os.getenv("KEY_VAULT_COSMOS_DB_NAME"):
+        keyVault = KeyVault()
+        cosmos_repository = CosmosRepository(connection_string=keyVault.get_secret(os.getenv('KEY_VAULT_COSMOS_DB_NAME')), database_name=os.getenv('DATABASE_NAME'))
 
 async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str, None]:
+    logging = Logger()
     try:
         async for event in r:
             yield json.dumps(event, ensure_ascii=False, cls=JSONEncoder) + "\n"
     except Exception as error:
-        logging.exception("Exception while generating response stream: %s", error)
+        logging.error(f"Exception while generating response stream: {str(error)}")
+
         yield json.dumps(error_dict(error))
 
 async def fetch_themes() -> List[Dict[str, Any]]:
     themes = get_from_cache("themes")
+    logging = Logger()
 
     if not themes:
         if not cosmos_repository:
@@ -664,6 +669,7 @@ async def close_clients():
 
 
 def create_app():
+    logging = Logger()
     app = Quart(__name__)
     app.register_blueprint(bp)
 
@@ -682,9 +688,8 @@ def create_app():
     default_level = "INFO"  # In development, log more verbosely
     if os.getenv("WEBSITE_HOSTNAME"):  # In production, don't log as heavily
         default_level = "WARNING"
-    logging.basicConfig(level=os.getenv("APP_LOG_LEVEL", default_level))
-
+    
     if allowed_origin := os.getenv("ALLOWED_ORIGIN"):
-        app.logger.info("CORS enabled for %s", allowed_origin)
+        logging.info("CORS enabled for %s", allowed_origin)
         cors(app, allow_origin=allowed_origin, allow_methods=["GET", "POST"])
     return app
