@@ -8,8 +8,24 @@ import { useLogin } from "../../authConfig";
 
 import { LoginButton } from "../../components/LoginButton";
 import SideBar from "../../components/SideBar/SideBar";
+import { AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from "@azure/msal-react";
 
 const Layout = () => {
+    const { instance } = useMsal();
+
+    let activeAccount;
+
+    if (instance) {
+        activeAccount = instance.getActiveAccount();
+    }
+
+    const handleLogoutRedirect = () => {
+        instance.logoutRedirect().catch((error) => console.log(error));
+    };
+
+    const handleLoginRedirect = () => {
+       // instance.loginRedirect(loginRequest).catch((error) => console.log(error));
+    };
     return (
         <div className={styles.containerBox}>
             <SideBar />
@@ -19,9 +35,15 @@ const Layout = () => {
                         <img src={HomeIcon} alt="b3 logo" />
                         <p className={styles.logoTitle}>HOME</p>
                     </div>
+                    <div className="flex items-center">
+                        <LoginButton />
+                    </div>
                 </header>
-                <Outlet />
+                <AuthenticatedTemplate>
+                    <Outlet />
+                </AuthenticatedTemplate>
             </div>
+            
         </div>
     );
 };

@@ -13,6 +13,7 @@ import Chat from "./pages/chat/Chat";
 
 var layout;
 if (useLogin) {
+    console.log("LOGIN")
     var msalInstance = new PublicClientApplication(msalConfig);
 
     // Default to using the first account if no account is active on page load
