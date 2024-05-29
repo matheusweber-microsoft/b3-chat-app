@@ -8,6 +8,7 @@ class CosmosRepository:
     def __init__(self, connection_string, database_name):
         # A conexão é inicializada usando a connection string
         self.client = pymongo.MongoClient(connection_string)
+        print("CONNECTION STRING: " + connection_string)
         self.db = self.client[database_name]
         self.logging = Logger()
         if database_name not in self.client.list_database_names():
