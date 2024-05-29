@@ -5,7 +5,7 @@ import mimetypes
 import os
 from pathlib import Path
 from services.keyVault.keyVault import KeyVault
-from core.log import Logger
+import logging
 from typing import Any, AsyncGenerator, Dict, Union, cast, List
 
 from azure.core.credentials import AzureKeyCredential
@@ -130,7 +130,7 @@ async def content_file(path: str, auth_claims: Dict[str, Any]):
     if path.find("#page=") > 0:
         path_parts = path.rsplit("#page=", 1)
         path = path_parts[0]
-    logging = Logger()
+
     logging.info("Opening file %s", path)
     blob_container_client: ContainerClient = current_app.config[CONFIG_BLOB_CONTAINER_CLIENT]
     blob: Union[BlobDownloader, DatalakeDownloader]
@@ -194,10 +194,14 @@ cosmos_repository = None
 
 if os.getenv("KEY_VAULT_COSMOS_DB_NAME"):
         keyVault = KeyVault()
-        cosmos_repository = CosmosRepository(connection_string=keyVault.get_secret(os.getenv('KEY_VAULT_COSMOS_DB_NAME')), database_name=os.getenv('DATABASE_NAME'))
+        KEY_VAULT_COSMOS_DB_NAME = os.getenv('KEY_VAULT_COSMOS_DB_NAME')
+        DATABASE_NAME = os.getenv('DATABASE_NAME')
+        print("Accessing KV to get Conn String using Conn Name: %s" % KEY_VAULT_COSMOS_DB_NAME)
+        CONN_STRING = keyVault.get_secret(KEY_VAULT_COSMOS_DB_NAME)
+        cosmos_repository = CosmosRepository(connection_string=CONN_STRING, database_name=DATABASE_NAME)
 
 async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str, None]:
-    logging = Logger()
+    
     try:
         async for event in r:
             yield json.dumps(event, ensure_ascii=False, cls=JSONEncoder) + "\n"
@@ -208,7 +212,6 @@ async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str,
 
 async def fetch_themes() -> List[Dict[str, Any]]:
     themes = get_from_cache("themes")
-    logging = Logger()
 
     if not themes:
         if not cosmos_repository:
@@ -484,7 +487,7 @@ async def setup_clients():
 
     # Set up authentication helper
     search_index = None
-    if AZURE_USE_AUTHENTICATION:
+    if AZURE_USE_AUTHENTICATION and AZURE_ENFORCE_ACCESS_CONTROL:
         search_index_client = SearchIndexClient(
             endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net",
             credential=search_credential,
@@ -669,7 +672,7 @@ async def close_clients():
 
 
 def create_app():
-    logging = Logger()
+    
     app = Quart(__name__)
     app.register_blueprint(bp)
 
