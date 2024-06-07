@@ -21,14 +21,17 @@ const Layout = () => {
                         <p className={styles.logoTitle}>HOME</p>
                     </div>
                     <div className="flex items-center">
-                        <LoginButton />
+                       { useLogin && <LoginButton /> } 
                     </div>
                 </header>
-                <AuthenticatedTemplate>
+                { useLogin ? (
+                    <AuthenticatedTemplate>
+                        <Outlet />
+                    </AuthenticatedTemplate>
+                ) : (
                     <Outlet />
-                </AuthenticatedTemplate>
+                )}
             </div>
-            
         </div>
     );
 };
