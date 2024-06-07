@@ -35,6 +35,9 @@ class Document:
     embedding: Optional[List[float]]
     sourcepage: Optional[str]
     sourcefile: Optional[str] 
+    theme: Optional[str]
+    subtheme: Optional[str]
+    originaldocsource: Optional[str]
     image_embedding: Optional[List[float]] = None
     category: Optional[str] = None
     oids: Optional[List[str]] = None
@@ -52,6 +55,9 @@ class Document:
             # "category": self.category,
             "sourcepage": self.sourcepage,
             "sourcefile": self.sourcefile,
+            "theme": self.theme,
+            "subtheme": self.subtheme,
+            "originaldocsource": self.originaldocsource,
             # "oids": self.oids,
             # "groups": self.groups,
             "captions": (
@@ -166,6 +172,9 @@ class Approach(ABC):
                         sourcefile=document.get("sourcefile"),
                         score=document.get("@search.score"),
                         reranker_score=document.get("@search.reranker_score"),
+                        theme=document.get("theme"),
+                        subtheme=document.get("subtheme"),
+                        originaldocsource=document.get("originaldocsource"),
                     )
                 
                 documents.append(
@@ -188,14 +197,14 @@ class Approach(ABC):
     ) -> list[str]:
         if use_semantic_captions:
             return [
-                (self.get_citation((doc.sourcepage or ""), use_image_citation))
+                (self.get_citation((doc.sourcefile or ""), use_image_citation))
                 + ": "
                 + nonewlines(" . ".join([cast(str, c.text) for c in (doc.captions or [])]))
                 for doc in results
             ]
         else:
             return [
-                (self.get_citation((doc.sourcepage or ""), use_image_citation)) + ": " + nonewlines(doc.content or "")
+                (self.get_citation((doc.sourcefile or ""), use_image_citation)) + ": " + nonewlines(doc.content or "")
                 for doc in results
             ]
 
