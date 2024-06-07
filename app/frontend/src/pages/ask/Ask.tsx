@@ -215,7 +215,7 @@ export function Component(): JSX.Element {
             </div>
             <div className={styles.askBottomSection}>
                 {isLoading && <Spinner label="Gerando resposta" />}
-                {!lastQuestionRef.current && <ExampleList onExampleClicked={onExampleClicked} useGPT4V={useGPT4V} />}
+                {!lastQuestionRef.current && <ExampleList onExampleClicked={onExampleClicked} questions={[]} />}
                 {!isLoading && answer && !error && (
                     <div className={styles.askAnswerContainer}>
                         <Answer

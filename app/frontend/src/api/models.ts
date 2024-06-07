@@ -92,7 +92,12 @@ export type SimpleAPIResponse = {
     message?: string;
 };
 
+export type AssistantConfig = {
+    sampleQuestions: [string];
+}
+
 export type ThemesResponse = {
     themeId: string;
     themeName: string;
+    assistantConfig: AssistantConfig;
 };

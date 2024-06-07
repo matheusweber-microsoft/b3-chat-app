@@ -101,7 +101,7 @@ export async function listThemes(): Promise<ThemesResponse[]> {
     if (!response.ok) {
         throw new Error(`Listing themes failed: ${response.statusText}`);
     }
-
     const dataResponse: ThemesResponse[] = await response.json();
+    console.log(dataResponse[0].assistantConfig.sampleQuestions[0]);
     return dataResponse;
 }
