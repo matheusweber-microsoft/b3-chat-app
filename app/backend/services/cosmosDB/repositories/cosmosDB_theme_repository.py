@@ -16,7 +16,7 @@ class ThemeRepository:
         self.logging.info("Listing themes")
         try:
             documents = self.repository.list_all(self.collection_name, {"active": True}, {
-                "_id": 1, "id": 1, "themeName": 1, "themeId": 1, "language": 1, "active": 1, "subThemes": 1, "assistantConfig": 1,
+                "_id": 1, "id": 1, "themeName": 1, "themeId": 1, "language": 1, "active": 1, "subThemes": 1, "assistantConfig": 1, 
             })
             list_of_themes = [Theme.from_dict(theme) for theme in documents]
             self.logging.info(f"Found {len(list_of_themes)} active themes")
