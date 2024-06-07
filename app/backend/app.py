@@ -7,7 +7,7 @@ from pathlib import Path
 from services.keyVault.keyVault import KeyVault
 import logging
 from typing import Any, AsyncGenerator, Dict, Union, cast, List
-
+import logging
 from azure.core.credentials import AzureKeyCredential
 from azure.core.credentials_async import AsyncTokenCredential
 from azure.core.exceptions import ResourceNotFoundError
