@@ -452,4 +452,3 @@ cachetools==5.3.3
 python-dotenv>=1.0.1,<2.0.0
 pymongo>=4.7.2,<5.0.0
 azure-cosmos>=4.6.0,<5.0.0
-opencensus-ext-azure==1.0.8
