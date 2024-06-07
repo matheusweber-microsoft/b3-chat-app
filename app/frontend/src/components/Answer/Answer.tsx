@@ -35,6 +35,14 @@ export const Answer = ({
 
     const sanitizedAnswerHtml = DOMPurify.sanitize(parsedAnswer.answerHtml);
 
+    const formatCitationTitle = (path: string) => {
+        let parts = path.split("/");
+
+        let lastPart = parts[parts.length - 1];
+
+        return lastPart;
+    };
+
     return (
         <Stack className={`${styles.answerContainer} ${isSelected && styles.selected}`} verticalAlign="space-between">
             <Stack.Item>
@@ -73,7 +81,7 @@ export const Answer = ({
                             const path = getCitationFilePath(x);
                             return (
                                 <a key={i} className={styles.citation} title={x} onClick={() => onCitationClicked(path)}>
-                                    {`${++i}. ${x}`}
+                                    {`${++i}. ${formatCitationTitle(x)}`}
                                 </a>
                             );
                         })}

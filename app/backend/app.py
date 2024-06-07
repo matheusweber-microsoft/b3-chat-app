@@ -115,9 +115,9 @@ async def assets(path):
     return await send_from_directory(Path(__file__).resolve().parent / "static" / "assets", path)
 
 
-@bp.route("/content/<path>")
+@bp.route("/content")
 @authenticated_path
-async def content_file(path: str, auth_claims: Dict[str, Any]):
+async def content_file(file: str, auth_claims: Dict[str, Any]):
     """
     Serve content files from blob storage from within the app to keep the example self-contained.
     *** NOTE *** if you are using app services authentication, this route will return unauthorized to all users that are not logged in
@@ -127,18 +127,20 @@ async def content_file(path: str, auth_claims: Dict[str, Any]):
     """
     # Remove page number from path, filename-1.txt -> filename.txt
     # This shouldn't typically be necessary as browsers don't send hash fragments to servers
+    path = request.args.get('file', default='', type=str)
+    
     if path.find("#page=") > 0:
         path_parts = path.rsplit("#page=", 1)
         path = path_parts[0]
-
-    logging.info("Opening file %s", path)
+    logging = Logger()
+    logging.info(f"Opening file {path}")
     blob_container_client: ContainerClient = current_app.config[CONFIG_BLOB_CONTAINER_CLIENT]
     blob: Union[BlobDownloader, DatalakeDownloader]
     try:
         blob = await blob_container_client.get_blob_client(path).download_blob()
     except ResourceNotFoundError:
-        logging.info("Path not found in general Blob container: %s", path)
-        if current_app.config[CONFIG_USER_UPLOAD_ENABLED]:
+        logging.info(f"Path not found in general Blob container: {path}", )
+        if current_app.config[CONFIG_USER_UPLOAD_ENABLED]:  
             try:
                 user_oid = auth_claims["oid"]
                 user_blob_container_client = current_app.config[CONFIG_USER_BLOB_CONTAINER_CLIENT]
@@ -233,6 +235,7 @@ async def fetch_themes() -> List[Dict[str, Any]]:
     return themes
 
 
+
 @bp.route("/themes", methods=["GET"])
 async def themes():
     if get_from_cache("themes"):
@@ -244,7 +247,7 @@ async def themes():
 @bp.route("/chat", methods=["POST"])
 @authenticated
 async def chat(auth_claims: Dict[str, Any]):
-
+    
     if not request.is_json:
         return jsonify({"error": "request must be json"}), 415
     request_json = await request.get_json()
