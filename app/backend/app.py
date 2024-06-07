@@ -132,7 +132,6 @@ async def content_file(file: str, auth_claims: Dict[str, Any]):
     if path.find("#page=") > 0:
         path_parts = path.rsplit("#page=", 1)
         path = path_parts[0]
-    logging = Logger()
     logging.info(f"Opening file {path}")
     blob_container_client: ContainerClient = current_app.config[CONFIG_BLOB_CONTAINER_CLIENT]
     blob: Union[BlobDownloader, DatalakeDownloader]
