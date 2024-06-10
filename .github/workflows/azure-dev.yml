@@ -127,7 +127,7 @@ jobs:
         run: azd provision --no-prompt
         env:
           AZD_INITIAL_ENVIRONMENT_CONFIG: ${{ secrets.AZD_INITIAL_ENVIRONMENT_CONFIG }}
-          AZURE_SERVER_APP_SECRET: ${{ secrets.AZURE_SERVER_APP_SECRET }}
+          CHATAPP_API_AZURE_CLIENT_SECRET: ${{ secrets.CHATAPP_API_AZURE_CLIENT_SECRET }}
           AZURE_CLIENT_APP_SECRET: ${{ secrets.AZURE_CLIENT_APP_SECRET }}
 
       - name: Deploy Application

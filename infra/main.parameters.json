@@ -177,7 +177,7 @@
       "value": "${AZURE_SERVER_APP_ID}"
     },
     "serverAppSecret": {
-      "value": "${AZURE_SERVER_APP_SECRET}"
+      "value": "${CHATAPP_API_AZURE_CLIENT_SECRET}"
     },
     "clientAppId": {
       "value": "${AZURE_CLIENT_APP_ID}"

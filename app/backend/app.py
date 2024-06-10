@@ -201,10 +201,8 @@ if os.getenv("MONGODB_CONN_STRING"):
         cosmos_repository = CosmosRepository(connection_string=CONN_STRING, database_name=DATABASE_NAME)
 
 async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str, None]:
-    print("Formatting as NDJSON")
     try:
         async for event in r:
-            print("Event")
             yield json.dumps(event, ensure_ascii=False, cls=JSONEncoder) + "\n"
     except Exception as error:
         logging.error(f"Exception while generating response stream: {str(error)}")
@@ -328,10 +326,8 @@ async def chat(auth_claims: Dict[str, Any]):
             session_state=request_json.get("session_state"),
         )
         if isinstance(result, dict):
-            print("Result is dict")
             return jsonify(result)
         else:
-            print("Result is not dict")
             response = await make_response(format_as_ndjson(result))
             response.timeout = None  # type: ignore
             response.mimetype = "application/json-lines"
@@ -455,7 +451,7 @@ async def setup_clients():
     AZURE_ENABLE_GLOBAL_DOCUMENT_ACCESS = os.getenv("AZURE_ENABLE_GLOBAL_DOCUMENT_ACCESS", "").lower() == "true"
     AZURE_ENABLE_UNAUTHENTICATED_ACCESS = os.getenv("AZURE_ENABLE_UNAUTHENTICATED_ACCESS", "").lower() == "true"
     AZURE_SERVER_APP_ID = os.getenv("AZURE_SERVER_APP_ID")
-    AZURE_SERVER_APP_SECRET = os.getenv("AZURE_SERVER_APP_SECRET")
+    CHATAPP_API_AZURE_CLIENT_SECRET = os.getenv("CHATAPP_API_AZURE_CLIENT_SECRET")
     AZURE_CLIENT_APP_ID = os.getenv("AZURE_CLIENT_APP_ID")
     AZURE_AUTH_TENANT_ID = os.getenv("AZURE_AUTH_TENANT_ID", AZURE_TENANT_ID)
 
@@ -485,8 +481,6 @@ async def setup_clients():
                 AZURE_SEARCH_SECRET_NAME and (await key_vault_client.get_secret(AZURE_SEARCH_SECRET_NAME)).value  # type: ignore[attr-defined]
             )
     
-    AZURE_SEARCH_SERVICE_QUERY_KEY = os.environ["AZURE_SEARCH_SERVICE_QUERY_KEY"]
-    AZURE_STORAGE_ACCOUNT_KEY = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")
     AZURE_OPENAISERVICE_KEY = os.getenv("AZURE_OPENAISERVICE_KEY")
     # Set up clients for AI Search and Storage
     search_credential: Union[AsyncTokenCredential, AzureKeyCredential] = (
@@ -516,7 +510,7 @@ async def setup_clients():
         search_index=search_index,
         use_authentication=AZURE_USE_AUTHENTICATION,
         server_app_id=AZURE_SERVER_APP_ID,
-        server_app_secret=AZURE_SERVER_APP_SECRET,
+        server_app_secret=CHATAPP_API_AZURE_CLIENT_SECRET,
         client_app_id=AZURE_CLIENT_APP_ID,
         tenant_id=AZURE_AUTH_TENANT_ID,
         require_access_control=AZURE_ENFORCE_ACCESS_CONTROL,
