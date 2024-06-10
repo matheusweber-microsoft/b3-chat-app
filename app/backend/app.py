@@ -60,6 +60,8 @@ from config import (
     CONFIG_USER_BLOB_CONTAINER_CLIENT,
     CONFIG_USER_UPLOAD_ENABLED,
     CONFIG_VECTOR_SEARCH_ENABLED,
+    CONFIG_SHOW_SUPPORTING_CONTENT,
+    CONFIG_SHOW_THOUGHT_PROCESS
 )
 from cachetools import TTLCache
 from core.theme.application.use_cases.list_themes import ListTheme
@@ -344,6 +346,8 @@ def config():
             "showSemanticRankerOption": current_app.config[CONFIG_SEMANTIC_RANKER_DEPLOYED],
             "showVectorOption": current_app.config[CONFIG_VECTOR_SEARCH_ENABLED],
             "showUserUpload": current_app.config[CONFIG_USER_UPLOAD_ENABLED],
+            "showThoughtProcess": current_app.config[CONFIG_SHOW_THOUGHT_PROCESS],
+            "showSupportingContent": current_app.config[CONFIG_SHOW_SUPPORTING_CONTENT],
         }
     )
 
@@ -589,6 +593,8 @@ async def setup_clients():
     current_app.config[CONFIG_SEMANTIC_RANKER_DEPLOYED] = AZURE_SEARCH_SEMANTIC_RANKER != "disabled"
     current_app.config[CONFIG_VECTOR_SEARCH_ENABLED] = os.getenv("USE_VECTORS", "").lower() != "false"
     current_app.config[CONFIG_USER_UPLOAD_ENABLED] = bool(USE_USER_UPLOAD)
+    current_app.config[CONFIG_SHOW_THOUGHT_PROCESS] = os.getenv("SHOW_THOUGHT_PROCESS", "").lower() == "true"
+    current_app.config[CONFIG_SHOW_SUPPORTING_CONTENT] = os.getenv("SHOW_SUPPORTING_CONTENT", "").lower() == "true"
 
     # Various approaches to integrate GPT and external knowledge, most applications will use a single one of these patterns
     # or some derivative, here we include several for exploration purposes
