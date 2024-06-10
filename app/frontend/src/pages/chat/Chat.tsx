@@ -32,6 +32,7 @@ import { ThemeSettings } from "../../components/ThemeSettings";
 import constraints from "../../constraints";
 
 const Chat = () => {
+    const [questions, setQuestions] = useState<string[]>([]);
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
     const promptTemplate = "";
     const temperature = 0.3;
@@ -67,6 +68,7 @@ const Chat = () => {
     const [showUserUpload, setShowUserUpload] = useState<boolean>(false);
 
     const [theme, setTheme] = useState<string>("");
+    const [themeName, setThemeName] = useState<string>("");
 
     const [themes, setThemes] = useState<ThemesResponse[]>([]);
 
@@ -74,11 +76,44 @@ const Chat = () => {
         // add to cookies
         document.cookie = `theme=${theme}; path=/; max-age=31536000`;
         setTheme(theme);
+        for (const t of themes) {
+            if (t.themeId === theme) {
+                setThemeName(t.themeName);
+                setQuestions(getRandomQuestions(t.assistantConfig.sampleQuestions));
+                break
+            }
+        }
         clearChat();
     };
 
     const onUseSuggestFollowupQuestionsChange = (_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, checked?: boolean) => {
         setUseSuggestFollowupQuestions(!!checked);
+    };
+
+    const getRandomQuestions = (sampleQuestions: string[]): string[] => {
+        const randomQuestions: string[] = [];
+        const totalQuestions = sampleQuestions.length;
+
+        if (totalQuestions === 0) {
+            return randomQuestions;
+        }
+
+        if (totalQuestions <= 3) {
+            return sampleQuestions;
+        }
+
+        const randomIndices = new Set<number>();
+
+        while (randomIndices.size < 3) {
+            const randomIndex = Math.floor(Math.random() * totalQuestions);
+            randomIndices.add(randomIndex);
+        }
+
+        randomIndices.forEach((index) => {
+            randomQuestions.push(sampleQuestions[index]);
+        });
+
+        return randomQuestions;
     };
 
     useEffect(() => {
@@ -93,6 +128,8 @@ const Chat = () => {
                     for (const theme of data) {
                         if (theme.themeId === themeId) {
                             setTheme(themeId);
+                            setThemeName(theme.themeName);
+                            setQuestions(getRandomQuestions(theme.assistantConfig.sampleQuestions));
                             break;
                         }
                     }
@@ -100,6 +137,8 @@ const Chat = () => {
                     for (const theme of data) {
                         if (theme.themeId === constraints.defaultTheme) {
                             setTheme(constraints.defaultTheme);
+                            setThemeName(theme.themeName);
+                            setQuestions(getRandomQuestions(theme.assistantConfig.sampleQuestions));
                             break;
                         }
                     }
@@ -284,9 +323,9 @@ const Chat = () => {
                     {!lastQuestionRef.current ? (
                         <div className={styles.chatEmptyState}>
                             <SparkleFilled fontSize={"120px"} primaryFill={"rgba(115, 118, 225, 1)"} aria-hidden="true" aria-label="Chat logo" />
-                            <h1 className={styles.chatEmptyStateTitle}>Converse com seus dados</h1>
-                            <h2 className={styles.chatEmptyStateSubtitle}>Pergunte qualquer coisa ou tente um exemplo</h2>
-                            <ExampleList onExampleClicked={onExampleClicked} useGPT4V={useGPT4V} />
+                            <h1 className={styles.chatEmptyStateTitle}>Converse com dados de {themeName}</h1>
+                            <h2 className={styles.chatEmptyStateSubtitle}>Pergunte qualquer coisa ou tente um exemplo dos dados de {themeName}</h2>
+                            <ExampleList onExampleClicked={onExampleClicked} useGPT4V={useGPT4V} questions={questions} />
                         </div>
                     ) : (
                         <div className={styles.chatMessageStream}>

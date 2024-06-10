@@ -3,7 +3,7 @@ import { Example } from "./Example";
 import styles from "./Example.module.css";
 
 const DEFAULT_EXAMPLES: string[] = [
-    "What are the types of orders?",
+    "What are the types of orders? aaaa",
     "What is the criteria for suspending trading in assets or derivatives?",
     "What are the procedures followed to ensure the functioning of the markers to mitigate systematic risks?"
 ];
@@ -17,12 +17,14 @@ const GPT4V_EXAMPLES: string[] = [
 interface Props {
     onExampleClicked: (value: string) => void;
     useGPT4V?: boolean;
+    questions: string[];
 }
 
-export const ExampleList = ({ onExampleClicked, useGPT4V }: Props) => {
+export const ExampleList = ({ onExampleClicked, useGPT4V, questions }: Props) => {
+
     return (
         <ul className={styles.examplesNavList}>
-            {(useGPT4V ? GPT4V_EXAMPLES : DEFAULT_EXAMPLES).map((question, i) => (
+            {questions.map((question: string, i: number) => (
                 <li key={i}>
                     <Example text={question} value={question} onClick={onExampleClicked} />
                 </li>
