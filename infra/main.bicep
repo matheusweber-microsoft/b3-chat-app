@@ -145,6 +145,10 @@ param useApplicationInsights bool = false
 
 @description('Show options to use vector embeddings for searching in the app UI')
 param useVectors bool = false
+@description('Show options to use vector embeddings for searching in the app UI')
+param showThoughtProcess bool = false
+@description('Show options to use vector embeddings for searching in the app UI')
+param showSupportingContent bool = false
 @description('Use Built-in integrated Vectorization feature of AI Search to vectorize and ingest documents')
 param useIntegratedVectorization bool = false
 
@@ -302,6 +306,8 @@ module backend 'core/host/appservice.bicep' = {
       // CORS support, for frontends on other hosts
       ALLOWED_ORIGIN: allowedOrigin
       USE_VECTORS: useVectors
+      SHOW_THOUGHT_PROCESS: showThoughtProcess
+      SHOW_SUPPORTING_CONTENT: showSupportingContent
       USE_GPT4V: useGPT4V
       USE_USER_UPLOAD: useUserUpload
       AZURE_USERSTORAGE_ACCOUNT: useUserUpload ? userStorage.outputs.name : ''

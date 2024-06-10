@@ -146,6 +146,12 @@
     "useVectors": {
       "value": "${USE_VECTORS=true}"
     },
+    "showThoughtProcess": {
+      "value": "${SHOW_THOUGHT_PROCESS=true}"
+    },
+    "showSupportingContent": {
+      "value": "${showSupportingContent=true}"
+    },
     "useGPT4V": {
       "value": "${USE_GPT4V=false}"
     },
