@@ -17,6 +17,8 @@ interface Props {
     onSupportingContentClicked: () => void;
     onFollowupQuestionClicked?: (question: string) => void;
     showFollowupQuestions?: boolean;
+    showSupportingContent: boolean;
+    showThoughtProcess: boolean;
 }
 
 export const Answer = ({
@@ -27,7 +29,9 @@ export const Answer = ({
     onThoughtProcessClicked,
     onSupportingContentClicked,
     onFollowupQuestionClicked,
-    showFollowupQuestions
+    showFollowupQuestions,
+    showSupportingContent,
+    showThoughtProcess
 }: Props) => {
     const followupQuestions = answer.choices[0].context.followup_questions;
     const messageContent = answer.choices[0].message.content;
@@ -49,22 +53,23 @@ export const Answer = ({
                 <Stack horizontal horizontalAlign="space-between">
                     <AnswerIcon />
                     <div>
-                        <IconButton
+                        {showThoughtProcess && <IconButton
                             style={{ color: "black" }}
                             iconProps={{ iconName: "Lightbulb" }}
                             title="Show thought process"
                             ariaLabel="Show thought process"
                             onClick={() => onThoughtProcessClicked()}
                             disabled={!answer.choices[0].context.thoughts?.length}
-                        />
-                        <IconButton
+                        />}
+                        
+                        {showSupportingContent && <IconButton
                             style={{ color: "black" }}
                             iconProps={{ iconName: "ClipboardList" }}
                             title="Show supporting content"
                             ariaLabel="Show supporting content"
                             onClick={() => onSupportingContentClicked()}
                             disabled={!answer.choices[0].context.data_points}
-                        />
+                        />}
                     </div>
                 </Stack>
             </Stack.Item>

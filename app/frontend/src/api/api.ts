@@ -18,7 +18,7 @@ export async function configApi(): Promise<Config> {
     const response = await fetch(`${BACKEND_URI}/config`, {
         method: "GET"
     });
-
+    
     return (await response.json()) as Config;
 }
 
