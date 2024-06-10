@@ -16,10 +16,11 @@ const GPT4V_EXAMPLES: string[] = [
 
 interface Props {
     onExampleClicked: (value: string) => void;
+    useGPT4V?: boolean;
     questions: string[];
 }
 
-export const ExampleList = ({ onExampleClicked, questions }: Props) => {
+export const ExampleList = ({ onExampleClicked, useGPT4V, questions }: Props) => {
 
     return (
         <ul className={styles.examplesNavList}>

@@ -318,7 +318,7 @@ const Chat = () => {
                             <SparkleFilled fontSize={"120px"} primaryFill={"rgba(115, 118, 225, 1)"} aria-hidden="true" aria-label="Chat logo" />
                             <h1 className={styles.chatEmptyStateTitle}>Converse com dados de {themeName}</h1>
                             <h2 className={styles.chatEmptyStateSubtitle}>Pergunte qualquer coisa ou tente um exemplo dos dados de {themeName}</h2>
-                            <ExampleList onExampleClicked={onExampleClicked} questions={questions} />
+                            <ExampleList onExampleClicked={onExampleClicked} useGPT4V={useGPT4V} questions={questions} />
                         </div>
                     ) : (
                         <div className={styles.chatMessageStream}>
