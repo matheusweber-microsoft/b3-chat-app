@@ -4,7 +4,6 @@ import json
 import mimetypes
 import os
 from pathlib import Path
-from services.keyVault.keyVault import KeyVault
 import logging
 from typing import Any, AsyncGenerator, Dict, Union, cast, List
 import logging
@@ -83,7 +82,7 @@ bp = Blueprint("routes", __name__, static_folder="static")
 # Fix Windows registry issue with mimetypes
 mimetypes.add_type("application/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
-
+logging.basicConfig(level=logging.INFO)
 # Define a cache with a maximum size and TTL of 24 hours (86400 seconds)
 cache = TTLCache(maxsize=100, ttl=24 * 3600)
 
@@ -195,16 +194,13 @@ class JSONEncoder(json.JSONEncoder):
 
 cosmos_repository = None
 
-if os.getenv("KEY_VAULT_COSMOS_DB_NAME"):
-        keyVault = KeyVault()
+if os.getenv("MONGODB_CONN_STRING"):
         KEY_VAULT_COSMOS_DB_NAME = os.getenv('KEY_VAULT_COSMOS_DB_NAME')
         DATABASE_NAME = os.getenv('DATABASE_NAME')
-        print("Accessing KV to get Conn String using Conn Name: %s" % KEY_VAULT_COSMOS_DB_NAME)
-        CONN_STRING = keyVault.get_secret(KEY_VAULT_COSMOS_DB_NAME)
+        CONN_STRING = os.getenv('MONGODB_CONN_STRING')
         cosmos_repository = CosmosRepository(connection_string=CONN_STRING, database_name=DATABASE_NAME)
 
 async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str, None]:
-    
     try:
         async for event in r:
             yield json.dumps(event, ensure_ascii=False, cls=JSONEncoder) + "\n"
@@ -272,25 +268,33 @@ async def chat(auth_claims: Dict[str, Any]):
     AZURE_KEY_VAULT_NAME = os.getenv("AZURE_KEY_VAULT_NAME")
     AZURE_SEARCH_SECRET_NAME = os.getenv("AZURE_SEARCH_SECRET_NAME")
 
-    azure_credential = DefaultAzureCredential(
-        exclude_shared_token_cache_credential=True)
+    # azure_credential = DefaultAzureCredential(
+    #     exclude_shared_token_cache_credential=True)
 
-    # Fetch any necessary secrets from Key Vault
-    search_key = None
-    if AZURE_KEY_VAULT_NAME:
-        async with SecretClient(
-            vault_url=f"https://{AZURE_KEY_VAULT_NAME}.vault.azure.net", credential=azure_credential
-        ) as key_vault_client:
-            search_key = (
-                # type: ignore[attr-defined]
-                AZURE_SEARCH_SECRET_NAME and (await key_vault_client.get_secret(AZURE_SEARCH_SECRET_NAME)).value
-            )
+    # # Fetch any necessary secrets from Key Vault
+    # search_key = None
+    # if AZURE_KEY_VAULT_NAME:
+    #     async with SecretClient(
+    #         vault_url=f"https://{AZURE_KEY_VAULT_NAME}.vault.azure.net", credential=azure_credential
+    #     ) as key_vault_client:
+    #         search_key = (
+    #             # type: ignore[attr-defined]
+    #             AZURE_SEARCH_SECRET_NAME and (await key_vault_client.get_secret(AZURE_SEARCH_SECRET_NAME)).value
+    #         )
 
-    # Set up clients for AI Search and Storage
-    search_credential: Union[AsyncTokenCredential, AzureKeyCredential] = (
-        AzureKeyCredential(search_key) if search_key else azure_credential
-    )
+    # # Set up clients for AI Search and Storage
+    # search_credential: Union[AsyncTokenCredential, AzureKeyCredential] = (
+    #     AzureKeyCredential(search_key) if search_key else azure_credential
+    # )
 
+    AZURE_SEARCH_SERVICE_QUERY_KEY = os.environ["AZURE_SEARCH_SERVICE_QUERY_KEY"]
+
+    if not AZURE_SEARCH_SERVICE_QUERY_KEY:
+        return jsonify({'error': 'Azure Search Service Query Key not found'}), 400
+    
+    if not AZURE_SEARCH_SERVICE:
+        return jsonify({'error': 'Azure Search Service not found'}), 400
+    
     index_name = selected_theme["assistantConfig"]["searchIndexName"]
 
     if not index_name:
@@ -299,7 +303,7 @@ async def chat(auth_claims: Dict[str, Any]):
     search_client = SearchClient(
         endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net",
         index_name=index_name,
-        credential=search_credential,
+        credential=AzureKeyCredential(AZURE_SEARCH_SERVICE_QUERY_KEY),
     )
 
     current_app.config[CONFIG_CHAT_APPROACH].set_search_client(search_client)
@@ -447,7 +451,7 @@ async def setup_clients():
     AZURE_ENABLE_GLOBAL_DOCUMENT_ACCESS = os.getenv("AZURE_ENABLE_GLOBAL_DOCUMENT_ACCESS", "").lower() == "true"
     AZURE_ENABLE_UNAUTHENTICATED_ACCESS = os.getenv("AZURE_ENABLE_UNAUTHENTICATED_ACCESS", "").lower() == "true"
     AZURE_SERVER_APP_ID = os.getenv("AZURE_SERVER_APP_ID")
-    AZURE_SERVER_APP_SECRET = os.getenv("AZURE_SERVER_APP_SECRET")
+    CHATAPP_API_AZURE_CLIENT_SECRET = os.getenv("CHATAPP_API_AZURE_CLIENT_SECRET")
     AZURE_CLIENT_APP_ID = os.getenv("AZURE_CLIENT_APP_ID")
     AZURE_AUTH_TENANT_ID = os.getenv("AZURE_AUTH_TENANT_ID", AZURE_TENANT_ID)
 
@@ -476,7 +480,8 @@ async def setup_clients():
             search_key = (
                 AZURE_SEARCH_SECRET_NAME and (await key_vault_client.get_secret(AZURE_SEARCH_SECRET_NAME)).value  # type: ignore[attr-defined]
             )
-
+    
+    AZURE_OPENAISERVICE_KEY = os.getenv("AZURE_OPENAISERVICE_KEY")
     # Set up clients for AI Search and Storage
     search_credential: Union[AsyncTokenCredential, AzureKeyCredential] = (
         AzureKeyCredential(search_key) if search_key else azure_credential
@@ -487,8 +492,9 @@ async def setup_clients():
         credential=search_credential,
     )
 
-    blob_container_client = ContainerClient(
-        f"https://{AZURE_STORAGE_ACCOUNT}.blob.core.windows.net", AZURE_STORAGE_CONTAINER, credential=azure_credential
+    BLOB_CONTAINER_CLIENT_CONNECTION_STRING = os.getenv("AZURE_STORAGE_ACCOUNT_CONN_STRING")
+    blob_container_client = ContainerClient.from_connection_string(
+        conn_str=BLOB_CONTAINER_CLIENT_CONNECTION_STRING, container_name=AZURE_STORAGE_CONTAINER
     )
 
     # Set up authentication helper
@@ -504,7 +510,7 @@ async def setup_clients():
         search_index=search_index,
         use_authentication=AZURE_USE_AUTHENTICATION,
         server_app_id=AZURE_SERVER_APP_ID,
-        server_app_secret=AZURE_SERVER_APP_SECRET,
+        server_app_secret=CHATAPP_API_AZURE_CLIENT_SECRET,
         client_app_id=AZURE_CLIENT_APP_ID,
         tenant_id=AZURE_AUTH_TENANT_ID,
         require_access_control=AZURE_ENFORCE_ACCESS_CONTROL,
@@ -559,7 +565,7 @@ async def setup_clients():
     openai_client: AsyncOpenAI
 
     if OPENAI_HOST.startswith("azure"):
-        token_provider = get_bearer_token_provider(azure_credential, "https://cognitiveservices.azure.com/.default")
+        # token_provider = get_bearer_token_provider(AzureKeyCredential(AZURE_OPENAISERVICE_KEY), "https://cognitiveservices.azure.com/.default")
 
         if OPENAI_HOST == "azure_custom":
             endpoint = os.environ["AZURE_OPENAI_CUSTOM_URL"]
@@ -568,10 +574,15 @@ async def setup_clients():
 
         api_version = os.getenv("AZURE_OPENAI_API_VERSION") or "2024-03-01-preview"
 
+        # openai_client = AsyncAzureOpenAI(
+        #     api_version=api_version,
+        #     azure_endpoint=endpoint,
+        #     azure_ad_token_provider=token_provider,
+        # )
         openai_client = AsyncAzureOpenAI(
             api_version=api_version,
             azure_endpoint=endpoint,
-            azure_ad_token_provider=token_provider,
+            api_key=AZURE_OPENAISERVICE_KEY,
         )
     elif OPENAI_HOST == "local":
         openai_client = AsyncOpenAI(
@@ -684,8 +695,10 @@ def create_app():
     app = Quart(__name__)
     app.register_blueprint(bp)
 
-    if os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING"):
-        configure_azure_monitor()
+    if os.getenv("APP_INSIGHTS_CONN_STRING"):
+        app_insights_connection_string = os.getenv("APP_INSIGHTS_CONN_STRING")
+
+        configure_azure_monitor(connection_string=app_insights_connection_string)
         # This tracks HTTP requests made by aiohttp:
         AioHttpClientInstrumentor().instrument()
         # This tracks HTTP requests made by httpx:

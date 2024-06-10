@@ -297,7 +297,7 @@ module backend 'core/host/appservice.bicep' = {
       AZURE_ENABLE_GLOBAL_DOCUMENTS: enableGlobalDocuments
       AZURE_ENABLE_UNAUTHENTICATED_ACCESS: enableUnauthenticatedAccess
       AZURE_SERVER_APP_ID: serverAppId
-      AZURE_SERVER_APP_SECRET: serverAppSecret
+      CHATAPP_API_AZURE_CLIENT_SECRET: serverAppSecret
       AZURE_CLIENT_APP_ID: clientAppId
       AZURE_CLIENT_APP_SECRET: clientAppSecret
       AZURE_TENANT_ID: tenantId

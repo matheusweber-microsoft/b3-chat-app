@@ -179,7 +179,7 @@ async def main():
     server_object_id, server_app_id, _ = await create_or_update_application_with_secret(
         graph_client,
         app_id_env_var="AZURE_SERVER_APP_ID",
-        app_secret_env_var="AZURE_SERVER_APP_SECRET",
+        app_secret_env_var="CHATAPP_API_AZURE_CLIENT_SECRET",
         request_app=server_app_initial(app_identifier),
     )
     print("Setting up server application permissions...")
