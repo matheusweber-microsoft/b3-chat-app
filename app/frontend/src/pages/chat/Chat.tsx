@@ -72,6 +72,9 @@ const Chat = () => {
 
     const [themes, setThemes] = useState<ThemesResponse[]>([]);
 
+    const [showThoughtProcess, setShowThoughtProcess] = useState<boolean>(false);
+    const [showSupportingContent, setShowSupportingContent] = useState<boolean>(false);
+
     const updateTheme = (theme: string) => {
         // add to cookies
         document.cookie = `theme=${theme}; path=/; max-age=31536000`;
@@ -157,6 +160,8 @@ const Chat = () => {
                 setRetrievalMode(RetrievalMode.Text);
             }
             setShowUserUpload(config.showUserUpload);
+            setShowSupportingContent(config.showSupportingContent);
+            setShowThoughtProcess(config.showThoughtProcess);
         });
     };
 
@@ -344,6 +349,8 @@ const Chat = () => {
                                                 onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
                                                 onFollowupQuestionClicked={q => makeApiRequest(q)}
                                                 showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
+                                                showSupportingContent={showSupportingContent}
+                                                showThoughtProcess={showThoughtProcess}
                                             />
                                         </div>
                                     </div>
@@ -363,6 +370,8 @@ const Chat = () => {
                                                 onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
                                                 onFollowupQuestionClicked={q => makeApiRequest(q)}
                                                 showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
+                                                showSupportingContent={showSupportingContent}
+                                                showThoughtProcess={showThoughtProcess}
                                             />
                                         </div>
                                     </div>
@@ -405,6 +414,8 @@ const Chat = () => {
                         citationHeight="810px"
                         answer={answers[selectedAnswer][1]}
                         activeTab={activeAnalysisPanelTab}
+                        showSupportingContent={showSupportingContent}
+                        showThoughtProcess={showThoughtProcess}
                     />
                 )}
 

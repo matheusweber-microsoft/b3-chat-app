@@ -86,6 +86,8 @@ export type Config = {
     showSemanticRankerOption: boolean;
     showVectorOption: boolean;
     showUserUpload: boolean;
+    showThoughtProcess: boolean;
+    showSupportingContent: boolean;
 };
 
 export type SimpleAPIResponse = {

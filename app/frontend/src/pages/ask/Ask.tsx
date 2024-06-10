@@ -52,6 +52,9 @@ export function Component(): JSX.Element {
 
     const client = useLogin ? useMsal().instance : undefined;
 
+    const [showThoughtProcess, setShowThoughtProcess] = useState<boolean>(false);
+    const [showSupportingContent, setShowSupportingContent] = useState<boolean>(false);
+
     const getConfig = async () => {
         configApi().then(config => {
             setShowGPT4VOptions(config.showGPT4VOptions);
@@ -62,6 +65,8 @@ export function Component(): JSX.Element {
                 setRetrievalMode(RetrievalMode.Text);
             }
             setShowUserUpload(config.showUserUpload);
+            setShowSupportingContent(config.showSupportingContent);
+            setShowThoughtProcess(config.showThoughtProcess);
         });
     };
 
@@ -224,6 +229,8 @@ export function Component(): JSX.Element {
                             onCitationClicked={x => onShowCitation(x)}
                             onThoughtProcessClicked={() => onToggleTab(AnalysisPanelTabs.ThoughtProcessTab)}
                             onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab)}
+                            showSupportingContent={showSupportingContent}
+                            showThoughtProcess={showThoughtProcess}
                         />
                     </div>
                 )}
@@ -240,6 +247,8 @@ export function Component(): JSX.Element {
                         citationHeight="600px"
                         answer={answer}
                         activeTab={activeAnalysisPanelTab}
+                        showSupportingContent={showSupportingContent}
+                        showThoughtProcess={showThoughtProcess}
                     />
                 )}
             </div>

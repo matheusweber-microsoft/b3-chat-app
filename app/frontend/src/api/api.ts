@@ -18,7 +18,7 @@ export async function configApi(): Promise<Config> {
     const response = await fetch(`${BACKEND_URI}/config`, {
         method: "GET"
     });
-
+    
     return (await response.json()) as Config;
 }
 
@@ -102,6 +102,5 @@ export async function listThemes(): Promise<ThemesResponse[]> {
         throw new Error(`Listing themes failed: ${response.statusText}`);
     }
     const dataResponse: ThemesResponse[] = await response.json();
-    console.log(dataResponse[0].assistantConfig.sampleQuestions[0]);
     return dataResponse;
 }
