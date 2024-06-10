@@ -145,9 +145,9 @@ param useApplicationInsights bool = false
 
 @description('Show options to use vector embeddings for searching in the app UI')
 param useVectors bool = false
-@description('Show options to use vector embeddings for searching in the app UI')
+@description('Show thought process in the app UI')
 param showThoughtProcess bool = false
-@description('Show options to use vector embeddings for searching in the app UI')
+@description('Show supporting content option in the app UI')
 param showSupportingContent bool = false
 @description('Use Built-in integrated Vectorization feature of AI Search to vectorize and ingest documents')
 param useIntegratedVectorization bool = false

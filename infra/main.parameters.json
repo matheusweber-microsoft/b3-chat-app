@@ -150,7 +150,7 @@
       "value": "${SHOW_THOUGHT_PROCESS=true}"
     },
     "showSupportingContent": {
-      "value": "${showSupportingContent=true}"
+      "value": "${SHOW_SUPPORTING_CONTENT=true}"
     },
     "useGPT4V": {
       "value": "${USE_GPT4V=false}"
