@@ -56,8 +56,8 @@ export const Answer = ({
                         {showThoughtProcess && <IconButton
                             style={{ color: "black" }}
                             iconProps={{ iconName: "Lightbulb" }}
-                            title="Show thought process"
-                            ariaLabel="Show thought process"
+                            title="Mostrar processo de pensamento"
+                            ariaLabel="Mostrar processo de pensamento"
                             onClick={() => onThoughtProcessClicked()}
                             disabled={!answer.choices[0].context.thoughts?.length}
                         />}
@@ -65,8 +65,8 @@ export const Answer = ({
                         {showSupportingContent && <IconButton
                             style={{ color: "black" }}
                             iconProps={{ iconName: "ClipboardList" }}
-                            title="Show supporting content"
-                            ariaLabel="Show supporting content"
+                            title="Mostrar conteúdo de apoio"
+                            ariaLabel="Mostrar conteúdo de apoio"
                             onClick={() => onSupportingContentClicked()}
                             disabled={!answer.choices[0].context.data_points}
                         />}
