@@ -19,11 +19,11 @@ RUN cd app/frontend && \
     npm run build
 
 # Environment variables can be set in a Dockerfile directly
-ENV PORT 5000
+ENV PORT 5001
 ENV HOST 0.0.0.0
 
 # Make port 5000 available to the world outside this container
-EXPOSE 5000
+EXPOSE 5001
 
 # Run the application
 CMD sh -c "cd app/backend && python -m quart --app main:app run --port $PORT --host $HOST --reload"

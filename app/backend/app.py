@@ -195,7 +195,6 @@ class JSONEncoder(json.JSONEncoder):
 cosmos_repository = None
 
 if os.getenv("MONGODB_CONN_STRING"):
-        KEY_VAULT_COSMOS_DB_NAME = os.getenv('KEY_VAULT_COSMOS_DB_NAME')
         DATABASE_NAME = os.getenv('DATABASE_NAME')
         CONN_STRING = os.getenv('MONGODB_CONN_STRING')
         cosmos_repository = CosmosRepository(connection_string=CONN_STRING, database_name=DATABASE_NAME)
