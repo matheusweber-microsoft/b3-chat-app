@@ -56,6 +56,7 @@ export function Component(): JSX.Element {
     const [showThoughtProcess, setShowThoughtProcess] = useState<boolean>(false);
     const [showSupportingContent, setShowSupportingContent] = useState<boolean>(false);
     const [selectedTheme, setSelectedTheme] = useState<ThemesResponse | null>(null);
+    const [analysisPanelData, setAnalysisPanelData] = useState<any | null>(null);
 
     const getConfig = async () => {
         configApi().then(config => {
@@ -277,6 +278,7 @@ export function Component(): JSX.Element {
                         showSupportingContent={showSupportingContent}
                         showThoughtProcess={showThoughtProcess}
                         theme={selectedTheme}
+                        data={analysisPanelData}
                     />
                 )}
             </div>

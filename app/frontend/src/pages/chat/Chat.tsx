@@ -72,9 +72,11 @@ const Chat = () => {
     const [selectedTheme, setSelectedTheme] = useState<ThemesResponse | null>(null);
 
     const [themes, setThemes] = useState<ThemesResponse[]>([]);
+    const [analysisPanelData, setAnalysisPanelData] = useState<any | null>(null);
 
     const [showThoughtProcess, setShowThoughtProcess] = useState<boolean>(false);
     const [showSupportingContent, setShowSupportingContent] = useState<boolean>(false);
+
 
     const updateTheme = (theme: string) => {
         // add to cookies
@@ -189,6 +191,9 @@ const Chat = () => {
         try {
             setIsStreaming(true);
             for await (const event of readNDJSONStream(responseBody)) {
+                if(event["choices"] && event["choices"][0]["context"] && event["choices"][0]["context"]["thoughts"] && event["choices"][0]["context"]["thoughts"][2] && event["choices"][0]["context"]["thoughts"][2]["description"] && event["choices"][0]["context"]["thoughts"][2]["description"][0]) {
+                    setAnalysisPanelData(event["choices"][0]["context"]["thoughts"][2]["description"][0]);
+                }
                 if (event["choices"] && event["choices"][0]["context"] && event["choices"][0]["context"]["data_points"]) {
                     event["choices"][0]["message"] = event["choices"][0]["delta"];
                     askResponse = event as ChatAppResponse;
@@ -258,6 +263,7 @@ const Chat = () => {
             };
 
             const response = await chatApi(request, token);
+            
             if (!response.body) {
                 throw Error("No response body");
             }
@@ -421,6 +427,7 @@ const Chat = () => {
                         showSupportingContent={showSupportingContent}
                         showThoughtProcess={showThoughtProcess}
                         theme={selectedTheme}
+                        data={analysisPanelData}
                     />
                 )}
 

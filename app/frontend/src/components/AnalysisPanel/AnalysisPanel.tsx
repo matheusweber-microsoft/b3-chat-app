@@ -23,6 +23,7 @@ interface Props {
     showSupportingContent: boolean;
     showThoughtProcess: boolean;
     theme: ThemesResponse | null;
+    data: any | null;
 }
 
 const pivotItemDisabledStyle = { disabled: true, style: { color: "grey" } };
@@ -36,7 +37,8 @@ export const AnalysisPanel = ({
     onActiveTabChanged,
     showSupportingContent,
     showThoughtProcess,
-    theme
+    theme,
+    data
 }: Props) => {
     const isDisabledThoughtProcessTab: boolean = !answer.choices[0].context.thoughts;
     const isDisabledSupportingContentTab: boolean = !answer.choices[0].context.data_points;
@@ -44,28 +46,22 @@ export const AnalysisPanel = ({
     const [citation, setCitation] = useState("");
     const [subthemeName, setSubthemeName] = useState("");
     const [fileName, setFileName] = useState("");
-
+    const [originalCitationPath, setOriginalCitationPath] = useState("");
     const client = useLogin ? useMsal().instance : undefined;
 
-    function formatOriginalCitationPath(filePath: string | undefined) {
-        if (!filePath) {
+    function updateCitationPath() {
+        if (!data) {
             return "#";
         }
-
-        const fileExtension = filePath.split(".").pop();
-
-        if (fileExtension === "pdf") {
-            const basePath = filePath.split("file=")[1];
-
-            const lastSlashIndex = basePath.lastIndexOf("/");
-            const directoryPath = basePath.substring(0, lastSlashIndex);
-
-            return getOriginalCitationFilePath(`${directoryPath}.pdf`);
-        } else {
-            const newFilePath = filePath.replace("content", "content-original");
-            return newFilePath;
-        }
-        return "#";
+        fetch(getOriginalCitationFilePath(data["originaldocsource"]))
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            setOriginalCitationPath(data.url);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
     }
 
     const fetchCitation = async () => {
@@ -86,44 +82,26 @@ export const AnalysisPanel = ({
             }
             setCitation(citationObjectUrl);
 
-            const url = activeCitation;
-            const parts = url.split("/");
-            const subthemeId = parts[2];
+            if (data) {
+                const subthemeId = data["subtheme"];
 
-            let fileName = parts[parts.length - 1];
+                let fileName = data["sourcepage"];
+                let lastPart = fileName.split("/").pop();
+                setFileName(lastPart);
 
-            if (fileName.endsWith(".pdf")) {
-                // Extract the page number from the file name
-                const match = fileName.match(/-(\d+)\.pdf$/);
-                if (match) {
-                    const pageNumber = match[1];
-                    // Remove the -number from the file name
-                    fileName = fileName.replace(/-\d+\.pdf$/, ".pdf");
-                    // Add #page=number to the end
-                    fileName += `#page=${pageNumber}`;
-                } else {
-                    fileName = fileName.replace(/\.pdf$/, "");
-                }
+                theme?.subThemes.forEach(subTheme => {
+                    console.log(subTheme.subthemeId);
+                    if (subthemeId.includes(subTheme.subthemeId)) {
+                        setSubthemeName(subTheme.subthemeName);
+                        return;
+                    }
+                });
             }
-
-            setFileName(fileName);
-
-            theme?.subThemes.forEach(subTheme => {
-                console.log(subTheme.subthemeId);
-                if (subthemeId.includes(subTheme.subthemeId)) {
-                    setSubthemeName(subTheme.subthemeName);
-                    return;
-                }
-            });
-
-            console.log(activeCitation);
-            console.log(citationObjectUrl);
-            console.log(theme);
-            console.log(subthemeName);
         }
     };
     useEffect(() => {
         fetchCitation();
+        updateCitationPath();
     }, []);
 
     const renderFileViewer = () => {
@@ -173,13 +151,17 @@ export const AnalysisPanel = ({
                 headerText="Citação"
                 headerButtonProps={isDisabledCitationTab ? pivotItemDisabledStyle : undefined}
             >
-                {subthemeName && (
+                {subthemeName && originalCitationPath && (
                     <div className="breadcrumb-container">
                         <span className="breadcrumb-item">{theme?.themeName}</span>
                         <span className="breadcrumb-separator">-</span>
                         <span className="breadcrumb-item">{subthemeName}</span>
                         <span className="breadcrumb-separator">-</span>
-                        <span className="breadcrumb-item active">{fileName}</span>
+                        <span className="breadcrumb-item active">
+                            <a href={originalCitationPath} target="_blank">
+                                {fileName}
+                            </a>
+                        </span>
                     </div>
                 )}
 
