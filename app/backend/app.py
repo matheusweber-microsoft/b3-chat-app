@@ -417,47 +417,6 @@ async def list_uploaded(auth_claims: dict[str, Any]):
             current_app.logger.exception("Error listing uploaded files", error)
     return jsonify(files), 200
 
-# @bp.route("/content-original")
-# @authenticated_path
-# async def content_file_original(file: str, auth_claims: Dict[str, Any]):
-#     AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS = os.environ["AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS"]
-    
-#     path = request.args.get('file', default='', type=str)
-    
-#     if path.find("#page=") > 0:
-#         path_parts = path.rsplit("#page=", 1)
-#         path = path_parts[0]
-#     logging.info(f"Opening file {path}")
-#     blob_container_client: ContainerClient = current_app.config[AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS]
-#     blob: Union[BlobDownloader, DatalakeDownloader]
-#     try:
-#         blob = await blob_container_client.get_blob_client(path).download_blob()
-#     except ResourceNotFoundError:
-#         logging.info(f"Path not found in general Blob container: {path}", )
-#         if current_app.config[CONFIG_USER_UPLOAD_ENABLED]:  
-#             try:
-#                 user_oid = auth_claims["oid"]
-#                 user_blob_container_client = current_app.config[CONFIG_USER_BLOB_CONTAINER_CLIENT]
-#                 user_directory_client: FileSystemClient = user_blob_container_client.get_directory_client(user_oid)
-#                 file_client = user_directory_client.get_file_client(path)
-#                 blob = await file_client.download_file()
-#             except ResourceNotFoundError:
-#                 logging.error(f"Path not found in DataLake: {str(path)}")
-#                 abort(404)
-#         else:
-#             abort(404)
-#     if not blob.properties or not blob.properties.has_key("content_settings"):
-#         abort(404)
-#     mime_type = blob.properties["content_settings"]["content_type"]
-#     if mime_type == "application/octet-stream":
-#         mime_type = mimetypes.guess_type(path)[0] or "application/octet-stream"
-#     blob_file = io.BytesIO()
-#     await blob.readinto(blob_file)
-#     blob_file.seek(0)
-#     response = await send_file(blob_file, mimetype=mime_type, as_attachment=False, attachment_filename=path)
-#     response.headers['Content-Disposition'] = 'inline'
-#     return 
-
 @bp.route("/content-original")
 @authenticated_path
 async def content_file_original(file: str, auth_claims: Dict[str, Any]):
