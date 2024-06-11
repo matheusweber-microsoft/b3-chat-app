@@ -104,3 +104,7 @@ export async function listThemes(): Promise<ThemesResponse[]> {
     const dataResponse: ThemesResponse[] = await response.json();
     return dataResponse;
 }
+
+export function getOriginalCitationFilePath(citation: string): string {
+    return `${BACKEND_URI}/content-original?file=${citation}`;
+}

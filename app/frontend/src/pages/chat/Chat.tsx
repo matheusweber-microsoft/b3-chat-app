@@ -69,6 +69,7 @@ const Chat = () => {
 
     const [theme, setTheme] = useState<string>("");
     const [themeName, setThemeName] = useState<string>("");
+    const [selectedTheme, setSelectedTheme] = useState<ThemesResponse | null>(null);
 
     const [themes, setThemes] = useState<ThemesResponse[]>([]);
 
@@ -83,6 +84,7 @@ const Chat = () => {
             if (t.themeId === theme) {
                 setThemeName(t.themeName);
                 setQuestions(getRandomQuestions(t.assistantConfig.sampleQuestions));
+                setSelectedTheme(t);
                 break
             }
         }
@@ -133,6 +135,7 @@ const Chat = () => {
                             setTheme(themeId);
                             setThemeName(theme.themeName);
                             setQuestions(getRandomQuestions(theme.assistantConfig.sampleQuestions));
+                            setSelectedTheme(theme);
                             break;
                         }
                     }
@@ -142,6 +145,7 @@ const Chat = () => {
                             setTheme(constraints.defaultTheme);
                             setThemeName(theme.themeName);
                             setQuestions(getRandomQuestions(theme.assistantConfig.sampleQuestions));
+                            setSelectedTheme(theme);
                             break;
                         }
                     }
@@ -416,6 +420,7 @@ const Chat = () => {
                         activeTab={activeAnalysisPanelTab}
                         showSupportingContent={showSupportingContent}
                         showThoughtProcess={showThoughtProcess}
+                        theme={selectedTheme}
                     />
                 )}
 

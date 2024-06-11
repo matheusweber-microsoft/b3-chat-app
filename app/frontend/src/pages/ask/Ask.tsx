@@ -3,7 +3,7 @@ import { Checkbox, Panel, DefaultButton, Spinner, Slider, TextField, SpinButton,
 
 import styles from "./Ask.module.css";
 
-import { askApi, configApi, ChatAppResponse, ChatAppRequest, RetrievalMode, VectorFieldOptions, GPT4VInput } from "../../api";
+import { askApi, configApi, ChatAppResponse, ChatAppRequest, RetrievalMode, VectorFieldOptions, GPT4VInput, ThemesResponse, listThemes } from "../../api";
 import { Answer, AnswerError } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { ExampleList } from "../../components/Example";
@@ -16,6 +16,7 @@ import { UploadFile } from "../../components/UploadFile";
 
 import { useMsal } from "@azure/msal-react";
 import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
+import constraints from "../../constraints";
 
 export function Component(): JSX.Element {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
@@ -54,6 +55,7 @@ export function Component(): JSX.Element {
 
     const [showThoughtProcess, setShowThoughtProcess] = useState<boolean>(false);
     const [showSupportingContent, setShowSupportingContent] = useState<boolean>(false);
+    const [selectedTheme, setSelectedTheme] = useState<ThemesResponse | null>(null);
 
     const getConfig = async () => {
         configApi().then(config => {
@@ -72,6 +74,31 @@ export function Component(): JSX.Element {
 
     useEffect(() => {
         getConfig();
+
+        listThemes()
+            .then(data => {
+                // set the theme from the cookie
+                const cookieTheme = document.cookie.split(";").find(c => c.trim().startsWith("theme="));
+                if (cookieTheme) {
+                    const themeId = cookieTheme.split("=")[1];
+                    for (const theme of data) {
+                        if (theme.themeId === themeId) {
+                            setSelectedTheme(theme);
+                            break;
+                        }
+                    }
+                } else {
+                    for (const theme of data) {
+                        if (theme.themeId === constraints.defaultTheme) {
+                            setSelectedTheme(theme);
+                            break;
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error(error);
+            });
     }, []);
 
     const makeApiRequest = async (question: string) => {
@@ -249,6 +276,7 @@ export function Component(): JSX.Element {
                         activeTab={activeAnalysisPanelTab}
                         showSupportingContent={showSupportingContent}
                         showThoughtProcess={showThoughtProcess}
+                        theme={selectedTheme}
                     />
                 )}
             </div>
