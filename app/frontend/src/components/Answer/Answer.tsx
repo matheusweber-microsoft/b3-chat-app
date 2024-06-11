@@ -80,7 +80,8 @@ export const Answer = ({
 
             {!!parsedAnswer.citations.length && (
                 <><Stack.Item>
-                    <span className={styles.citationLearnMore}>
+                    <span className={styles.answerText}  style={{ color: "#6c757d" }}
+ >
                         *Essa resposta foi gerada por um modelo de IA e pode está incorreta. É recomendado que você verifique as fontes.<br></br>
                     </span>
                 </Stack.Item>
