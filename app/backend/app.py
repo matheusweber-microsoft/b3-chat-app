@@ -161,8 +161,8 @@ async def content_file(file: str, auth_claims: Dict[str, Any]):
     blob_file.seek(0)
     return await send_file(blob_file, mimetype=mime_type, as_attachment=False, attachment_filename=path)
 
-@bp.route("/clean_cache", methods=["POST"])
-async def clean_cache():
+@bp.route("/clearcache", methods=["POST"])
+async def clear_cache():
     cache.clear()
     return jsonify({"message": "Cache cleared"}), 200
 
