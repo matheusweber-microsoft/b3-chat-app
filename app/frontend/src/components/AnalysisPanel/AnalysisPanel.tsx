@@ -49,14 +49,11 @@ export const AnalysisPanel = ({
     const [originalCitationPath, setOriginalCitationPath] = useState("");
     const client = useLogin ? useMsal().instance : undefined;
 
-    function updateCitationPath() {
-        if (!data) {
-            return "#";
-        }
-        fetch(getOriginalCitationFilePath(data["originaldocsource"]))
+    function updateCitationPath(citation: string) {
+        console.log(citation);
+        fetch(getOriginalCitationFilePath(citation))
         .then(response => response.json())
         .then(data => {
-            console.log(data);
             setOriginalCitationPath(data.url);
         })
         .catch(error => {
@@ -65,6 +62,7 @@ export const AnalysisPanel = ({
     }
 
     const fetchCitation = async () => {
+        
         const token = client ? await getToken(client) : undefined;
         if (activeCitation) {
             // Get hash from the URL as it may contain #page=N
@@ -81,27 +79,36 @@ export const AnalysisPanel = ({
                 citationObjectUrl += "#" + originalHash;
             }
             setCitation(citationObjectUrl);
-
-            if (data) {
-                const subthemeId = data["subtheme"];
-
-                let fileName = data["sourcepage"];
-                let lastPart = fileName.split("/").pop();
-                setFileName(lastPart);
-
-                theme?.subThemes.forEach(subTheme => {
-                    console.log(subTheme.subthemeId);
-                    if (subthemeId.includes(subTheme.subthemeId)) {
-                        setSubthemeName(subTheme.subthemeName);
-                        return;
-                    }
-                });
-            }
         }
     };
+
+    const fillData = () => {
+        if (activeCitation) {
+            let fileContent = activeCitation.split("file=")[1];
+            if (fileContent) {
+                if (data && data[fileContent]) {
+                    const subthemeId = data[fileContent]["subtheme"];
+    
+                    let fileName = data[fileContent]["sourcepage"];
+                    let lastPart = fileName.split("/").pop();
+                    setFileName(lastPart);
+    
+                    theme?.subThemes.forEach(subTheme => {
+                        console.log(subTheme.subthemeId);
+                        if (subthemeId.includes(subTheme.subthemeId)) {
+                            setSubthemeName(subTheme.subthemeName);
+                            return;
+                        }
+                    });
+                    updateCitationPath(data[fileContent]["originaldocsource"]);
+                }
+            }
+        }
+        
+    }
     useEffect(() => {
+        fillData();
         fetchCitation();
-        updateCitationPath();
     }, []);
 
     const renderFileViewer = () => {
@@ -116,7 +123,7 @@ export const AnalysisPanel = ({
             case "md":
                 return <MarkdownViewer src={activeCitation} />;
             case "pdf":
-                return <iframe title="Citation" src={citation} width="100%" height={citationHeight} />;
+                 return <iframe title="Citation" src={citation} width="100%" height={citationHeight} />;
             case "docx":
                 return <iframe title="Citation" src={citation} width="100%" height={citationHeight} />;
         }
@@ -151,7 +158,7 @@ export const AnalysisPanel = ({
                 headerText="Citação"
                 headerButtonProps={isDisabledCitationTab ? pivotItemDisabledStyle : undefined}
             >
-                {subthemeName && originalCitationPath && (
+                {subthemeName && (
                     <div className="breadcrumb-container">
                         <span className="breadcrumb-item">{theme?.themeName}</span>
                         <span className="breadcrumb-separator">-</span>

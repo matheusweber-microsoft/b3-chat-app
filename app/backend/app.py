@@ -5,7 +5,6 @@ import json
 import mimetypes
 import os
 from pathlib import Path
-import logging
 from typing import Any, AsyncGenerator, Dict, Union, cast, List
 import logging
 from azure.core.credentials import AzureKeyCredential

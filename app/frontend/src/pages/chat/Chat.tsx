@@ -191,8 +191,8 @@ const Chat = () => {
         try {
             setIsStreaming(true);
             for await (const event of readNDJSONStream(responseBody)) {
-                if(event["choices"] && event["choices"][0]["context"] && event["choices"][0]["context"]["thoughts"] && event["choices"][0]["context"]["thoughts"][2] && event["choices"][0]["context"]["thoughts"][2]["description"] && event["choices"][0]["context"]["thoughts"][2]["description"][0]) {
-                    setAnalysisPanelData(event["choices"][0]["context"]["thoughts"][2]["description"][0]);
+                if(event["choices"] && event["choices"][0] && event["choices"][0]["context"] && event["choices"][0]["context"]["data"]) {
+                    setAnalysisPanelData(event["choices"][0]["context"]["data"]);
                 }
                 if (event["choices"] && event["choices"][0]["context"] && event["choices"][0]["context"]["data_points"]) {
                     event["choices"][0]["message"] = event["choices"][0]["delta"];
