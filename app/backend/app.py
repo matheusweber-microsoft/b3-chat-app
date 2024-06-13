@@ -118,7 +118,7 @@ async def assets(path):
 
 
 @bp.route("/content")
-@authenticated
+@authenticated_path
 async def content_file(file: str, auth_claims: Dict[str, Any]):
     """
     Serve content files from blob storage from within the app to keep the example self-contained.
@@ -421,8 +421,7 @@ async def list_uploaded(auth_claims: dict[str, Any]):
     return jsonify(files), 200
 
 @bp.route("/content-original")
-@authenticated_path
-async def content_file_original(file: str, auth_claims: Dict[str, Any]):
+async def content_file_original():
     path = request.args.get('file', default='', type=str)
     logging.info(f"Opening file {path}")
     AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS = os.environ.get("AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS", "originaldocuments")
@@ -438,7 +437,7 @@ async def content_file_original(file: str, auth_claims: Dict[str, Any]):
             blob_name=blob_client.blob_name,
             account_key=blob_container_client.credential.account_key,
             permission=BlobSasPermissions(read=True),
-            expiry=datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=30)  # Token valid for 30 mins
+            expiry=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=30)  # Token valid for 30 mins
         )  
             
         blob_url = blob_client.url + "?" + sas_token

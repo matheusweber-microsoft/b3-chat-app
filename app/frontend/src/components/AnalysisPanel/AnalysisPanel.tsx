@@ -50,7 +50,6 @@ export const AnalysisPanel = ({
     const client = useLogin ? useMsal().instance : undefined;
 
     function updateCitationPath(citation: string) {
-        console.log(citation);
         fetch(getOriginalCitationFilePath(citation))
         .then(response => response.json())
         .then(data => {
@@ -62,7 +61,6 @@ export const AnalysisPanel = ({
     }
 
     const fetchCitation = async () => {
-        
         const token = client ? await getToken(client) : undefined;
         if (activeCitation) {
             // Get hash from the URL as it may contain #page=N
@@ -94,7 +92,6 @@ export const AnalysisPanel = ({
                     setFileName(lastPart);
     
                     theme?.subThemes.forEach(subTheme => {
-                        console.log(subTheme.subthemeId);
                         if (subthemeId.includes(subTheme.subthemeId)) {
                             setSubthemeName(subTheme.subthemeName);
                             return;
@@ -158,7 +155,7 @@ export const AnalysisPanel = ({
                 headerText="Citação"
                 headerButtonProps={isDisabledCitationTab ? pivotItemDisabledStyle : undefined}
             >
-                {theme && subthemeName && originalCitationPath.length > 0 && (
+                {theme && subthemeName && originalCitationPath && originalCitationPath.length > 0 && (
                     <div className="breadcrumb-container">
                         <span className="breadcrumb-item">{theme?.themeName}</span>
                         <span className="breadcrumb-separator">-</span>
