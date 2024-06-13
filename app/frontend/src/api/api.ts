@@ -105,6 +105,6 @@ export async function listThemes(): Promise<ThemesResponse[]> {
     return dataResponse;
 }
 
-export function getOriginalCitationFilePath(citation: string): string {
-    return `${BACKEND_URI}/content-original?file=${citation}`;
+export function getOriginalCitationFilePath(citation: string, fragment: string): string {
+    return `${BACKEND_URI}/content-original?file=${citation}&fragment=${fragment}`;
 }

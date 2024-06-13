@@ -50,7 +50,9 @@ export const AnalysisPanel = ({
     const client = useLogin ? useMsal().instance : undefined;
 
     function updateCitationPath(citation: string) {
-        fetch(getOriginalCitationFilePath(citation))
+        const path = citation.indexOf("#") ? citation.split("#")[0] : "";
+        const originalHash = citation.indexOf("#") ? citation.split("#")[1] : "";
+        fetch(getOriginalCitationFilePath(path, originalHash))
         .then(response => response.json())
         .then(data => {
             setOriginalCitationPath(data.url);
@@ -97,7 +99,7 @@ export const AnalysisPanel = ({
                             return;
                         }
                     });
-                    updateCitationPath(data[fileContent]["originaldocsource"]);
+                    updateCitationPath(data[fileContent]["sourcepage"]);
                 }
             }
         }

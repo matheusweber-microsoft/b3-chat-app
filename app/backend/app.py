@@ -423,13 +423,13 @@ async def list_uploaded(auth_claims: dict[str, Any]):
 @bp.route("/content-original")
 async def content_file_original():
     path = request.args.get('file', default='', type=str)
-    logging.info(f"Opening file {path}")
+    fragment = request.args.get('fragment', default='', type=str)
+
     AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS = os.environ.get("AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS", "originaldocuments")
     blob_container_client: ContainerClient = current_app.config[AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS]
-    logging.info(f"Container {AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS}")
     try:
+        logging.info(f"Opening {path}")
         blob_client = blob_container_client.get_blob_client(path)
-        logging.info(f"Blob {path}")
         # Generate SAS token
         sas_token = generate_blob_sas(
             account_name=blob_client.account_name,
@@ -437,11 +437,10 @@ async def content_file_original():
             blob_name=blob_client.blob_name,
             account_key=blob_container_client.credential.account_key,
             permission=BlobSasPermissions(read=True),
-            expiry=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=30)  # Token valid for 30 mins
+            expiry=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=10)  # Token valid for 10 mins
         )  
             
-        blob_url = blob_client.url + "?" + sas_token
-        logging.info(f"Blob URL {blob_url}")
+        blob_url = blob_client.url + "?" + sas_token + "#" + fragment
         return jsonify({"url": blob_url}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
