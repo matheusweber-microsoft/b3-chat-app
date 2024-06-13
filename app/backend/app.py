@@ -118,7 +118,7 @@ async def assets(path):
 
 
 @bp.route("/content")
-@authenticated_path
+@authenticated
 async def content_file(file: str, auth_claims: Dict[str, Any]):
     """
     Serve content files from blob storage from within the app to keep the example self-contained.
