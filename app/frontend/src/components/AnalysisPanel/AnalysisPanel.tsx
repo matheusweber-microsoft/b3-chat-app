@@ -50,8 +50,9 @@ export const AnalysisPanel = ({
     const client = useLogin ? useMsal().instance : undefined;
 
     function updateCitationPath(citation: string) {
-        console.log(citation);
-        fetch(getOriginalCitationFilePath(citation))
+        const path = citation.indexOf("#") ? citation.split("#")[0] : "";
+        const originalHash = citation.indexOf("#") ? citation.split("#")[1] : "";
+        fetch(getOriginalCitationFilePath(path, originalHash))
         .then(response => response.json())
         .then(data => {
             setOriginalCitationPath(data.url);
@@ -62,7 +63,6 @@ export const AnalysisPanel = ({
     }
 
     const fetchCitation = async () => {
-        
         const token = client ? await getToken(client) : undefined;
         if (activeCitation) {
             // Get hash from the URL as it may contain #page=N
@@ -94,13 +94,12 @@ export const AnalysisPanel = ({
                     setFileName(lastPart);
     
                     theme?.subThemes.forEach(subTheme => {
-                        console.log(subTheme.subthemeId);
                         if (subthemeId.includes(subTheme.subthemeId)) {
                             setSubthemeName(subTheme.subthemeName);
                             return;
                         }
                     });
-                    updateCitationPath(data[fileContent]["originaldocsource"]);
+                    updateCitationPath(data[fileContent]["sourcepage"]);
                 }
             }
         }
@@ -158,7 +157,7 @@ export const AnalysisPanel = ({
                 headerText="Citação"
                 headerButtonProps={isDisabledCitationTab ? pivotItemDisabledStyle : undefined}
             >
-                {subthemeName && (
+                {theme && subthemeName && originalCitationPath && originalCitationPath.length > 0 && (
                     <div className="breadcrumb-container">
                         <span className="breadcrumb-item">{theme?.themeName}</span>
                         <span className="breadcrumb-separator">-</span>
