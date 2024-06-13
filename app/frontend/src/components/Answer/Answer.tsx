@@ -79,19 +79,25 @@ export const Answer = ({
             </Stack.Item>
 
             {!!parsedAnswer.citations.length && (
-                <Stack.Item>
-                    <Stack horizontal wrap tokens={{ childrenGap: 5 }}>
-                        <span className={styles.citationLearnMore}>Citations:</span>
-                        {parsedAnswer.citations.map((x, i) => {
-                            const path = getCitationFilePath(x);
-                            return (
-                                <a key={i} className={styles.citation} title={x} onClick={() => onCitationClicked(path)}>
-                                    {`${++i}. ${formatCitationTitle(x)}`}
-                                </a>
-                            );
-                        })}
-                    </Stack>
+                <><Stack.Item>
+                    <span className={styles.answerText}  style={{ color: "#6c757d" }}
+ >
+                        *Essa resposta foi gerada por um modelo de IA e pode está incorreta. É recomendado que você verifique as fontes.<br></br>
+                    </span>
                 </Stack.Item>
+                <Stack.Item>
+                        <Stack horizontal wrap tokens={{ childrenGap: 5 }}>
+                            <span className={styles.citationLearnMore}>Citações:</span>
+                            {parsedAnswer.citations.map((x, i) => {
+                                const path = getCitationFilePath(x);
+                                return (
+                                    <a key={i} className={styles.citation} title={x} onClick={() => onCitationClicked(path)}>
+                                        {`${++i}. ${formatCitationTitle(x)}`}
+                                    </a>
+                                );
+                            })}
+                        </Stack>
+                    </Stack.Item></>
             )}
 
             {!!followupQuestions?.length && showFollowupQuestions && onFollowupQuestionClicked && (

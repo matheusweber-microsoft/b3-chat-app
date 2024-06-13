@@ -98,8 +98,14 @@ export type AssistantConfig = {
     sampleQuestions: [string];
 }
 
+export type SubTheme = {
+    subthemeId: string;
+    subthemeName: string;
+};
+
 export type ThemesResponse = {
     themeId: string;
     themeName: string;
+    subThemes: SubTheme[];
     assistantConfig: AssistantConfig;
 };

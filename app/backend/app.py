@@ -1,10 +1,10 @@
 import dataclasses
+import datetime
 import io
 import json
 import mimetypes
 import os
 from pathlib import Path
-import logging
 from typing import Any, AsyncGenerator, Dict, Union, cast, List
 import logging
 from azure.core.credentials import AzureKeyCredential
@@ -77,6 +77,7 @@ from prepdocs import (
 )
 from prepdocslib.filestrategy import UploadUserFileStrategy
 from prepdocslib.listfilestrategy import File
+from azure.storage.blob import generate_blob_sas, BlobSasPermissions, BlobClient, BlobServiceClient, generate_blob_sas
 
 bp = Blueprint("routes", __name__, static_folder="static")
 # Fix Windows registry issue with mimetypes
@@ -419,11 +420,38 @@ async def list_uploaded(auth_claims: dict[str, Any]):
             current_app.logger.exception("Error listing uploaded files", error)
     return jsonify(files), 200
 
+@bp.route("/content-original")
+@authenticated_path
+async def content_file_original(file: str, auth_claims: Dict[str, Any]):
+    path = request.args.get('file', default='', type=str)
+
+    AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS = os.environ.get("AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS", "originaldocuments")
+    blob_container_client: ContainerClient = current_app.config[AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS]
+    try:
+        blob_client = blob_container_client.get_blob_client(path)
+ 
+        # Generate SAS token
+        sas_token = generate_blob_sas(
+            account_name=blob_client.account_name,
+            container_name=blob_client.container_name,
+            blob_name=blob_client.blob_name,
+            account_key=blob_container_client.credential.account_key,
+            permission=BlobSasPermissions(read=True),
+            expiry=datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=30)  # Token valid for 30 mins
+        )  
+            
+        blob_url = blob_client.url + "?" + sas_token
+        
+        return jsonify({"url": blob_url}), 200
+    except Exception as e:
+        abort(404)
+    
 
 @bp.before_app_serving
 async def setup_clients():
     # Replace these with your own values, either in environment variables or directly here
     AZURE_STORAGE_ACCOUNT = os.environ["AZURE_STORAGE_ACCOUNT"]
+    AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS = os.environ.get("AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS", "originaldocuments")
     AZURE_STORAGE_CONTAINER = os.environ["AZURE_STORAGE_CONTAINER"]
     AZURE_USERSTORAGE_ACCOUNT = os.environ.get("AZURE_USERSTORAGE_ACCOUNT")
     AZURE_USERSTORAGE_CONTAINER = os.environ.get("AZURE_USERSTORAGE_CONTAINER")
@@ -499,6 +527,10 @@ async def setup_clients():
     BLOB_CONTAINER_CLIENT_CONNECTION_STRING = os.getenv("AZURE_STORAGE_ACCOUNT_CONN_STRING")
     blob_container_client = ContainerClient.from_connection_string(
         conn_str=BLOB_CONTAINER_CLIENT_CONNECTION_STRING, container_name=AZURE_STORAGE_CONTAINER
+    )
+
+    blob_container_original_documents_client = ContainerClient.from_connection_string(
+        conn_str=BLOB_CONTAINER_CLIENT_CONNECTION_STRING, container_name=AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS
     )
 
     # Set up authentication helper
@@ -610,6 +642,7 @@ async def setup_clients():
     current_app.config[CONFIG_USER_UPLOAD_ENABLED] = bool(USE_USER_UPLOAD)
     current_app.config[CONFIG_SHOW_THOUGHT_PROCESS] = os.getenv("SHOW_THOUGHT_PROCESS", "").lower() == "true"
     current_app.config[CONFIG_SHOW_SUPPORTING_CONTENT] = os.getenv("SHOW_SUPPORTING_CONTENT", "").lower() == "true"
+    current_app.config[AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS] = blob_container_original_documents_client
 
     # Various approaches to integrate GPT and external knowledge, most applications will use a single one of these patterns
     # or some derivative, here we include several for exploration purposes

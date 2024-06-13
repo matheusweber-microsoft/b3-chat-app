@@ -13,7 +13,7 @@ from approaches.approach import ThoughtStep
 from approaches.chatapproach import ChatApproach
 from core.authentication import AuthenticationHelper
 from core.modelhelper import get_token_limit
-
+import logging
 
 class ChatReadRetrieveReadApproach(ChatApproach):
     """
@@ -90,7 +90,6 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         theme: any,
         should_stream: bool = False,
     ) -> tuple[dict[str, Any], Coroutine[Any, Any, Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]]]:
-        
         self.system_message_chat_conversation_string = theme["assistantConfig"]["systemMessageConversationPrompt"]
         self.query_prompt_few_shots = theme["assistantConfig"]["queryPromptFewShots"]
         self.follow_up_questions_prompt_content = theme["assistantConfig"]["followUpQuestionsPrompt"]
@@ -247,6 +246,18 @@ class ChatReadRetrieveReadApproach(ChatApproach):
                 ),
             ],
         }
+
+        if results and len(results) > 0:
+            results_dict = dict()
+            for result in results:
+                serialized_result = result.serialize_for_results()
+                result_dict = dict()
+                result_dict["sourcepage"] = serialized_result["sourcepage"]
+                result_dict["theme"] = serialized_result["theme"]
+                result_dict["subtheme"] = serialized_result["subtheme"]
+                result_dict["originaldocsource"] = serialized_result["originaldocsource"]
+                results_dict[serialized_result["sourcefile"]] = result_dict
+            extra_info["data"] = results_dict
 
         chat_coroutine = self.openai_client.chat.completions.create(
             # Azure OpenAI takes the deployment name as the model name

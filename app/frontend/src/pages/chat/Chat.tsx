@@ -69,11 +69,14 @@ const Chat = () => {
 
     const [theme, setTheme] = useState<string>("");
     const [themeName, setThemeName] = useState<string>("");
+    const [selectedTheme, setSelectedTheme] = useState<ThemesResponse | null>(null);
 
     const [themes, setThemes] = useState<ThemesResponse[]>([]);
+    const [analysisPanelData, setAnalysisPanelData] = useState<any | null>(null);
 
     const [showThoughtProcess, setShowThoughtProcess] = useState<boolean>(false);
     const [showSupportingContent, setShowSupportingContent] = useState<boolean>(false);
+
 
     const updateTheme = (theme: string) => {
         // add to cookies
@@ -83,6 +86,7 @@ const Chat = () => {
             if (t.themeId === theme) {
                 setThemeName(t.themeName);
                 setQuestions(getRandomQuestions(t.assistantConfig.sampleQuestions));
+                setSelectedTheme(t);
                 break
             }
         }
@@ -133,6 +137,7 @@ const Chat = () => {
                             setTheme(themeId);
                             setThemeName(theme.themeName);
                             setQuestions(getRandomQuestions(theme.assistantConfig.sampleQuestions));
+                            setSelectedTheme(theme);
                             break;
                         }
                     }
@@ -142,6 +147,7 @@ const Chat = () => {
                             setTheme(constraints.defaultTheme);
                             setThemeName(theme.themeName);
                             setQuestions(getRandomQuestions(theme.assistantConfig.sampleQuestions));
+                            setSelectedTheme(theme);
                             break;
                         }
                     }
@@ -185,6 +191,9 @@ const Chat = () => {
         try {
             setIsStreaming(true);
             for await (const event of readNDJSONStream(responseBody)) {
+                if(event["choices"] && event["choices"][0] && event["choices"][0]["context"] && event["choices"][0]["context"]["data"]) {
+                    setAnalysisPanelData(event["choices"][0]["context"]["data"]);
+                }
                 if (event["choices"] && event["choices"][0]["context"] && event["choices"][0]["context"]["data_points"]) {
                     event["choices"][0]["message"] = event["choices"][0]["delta"];
                     askResponse = event as ChatAppResponse;
@@ -254,6 +263,7 @@ const Chat = () => {
             };
 
             const response = await chatApi(request, token);
+            
             if (!response.body) {
                 throw Error("No response body");
             }
@@ -416,6 +426,8 @@ const Chat = () => {
                         activeTab={activeAnalysisPanelTab}
                         showSupportingContent={showSupportingContent}
                         showThoughtProcess={showThoughtProcess}
+                        theme={selectedTheme}
+                        data={analysisPanelData}
                     />
                 )}
 
