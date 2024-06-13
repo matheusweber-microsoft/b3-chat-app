@@ -420,12 +420,13 @@ async def list_uploaded(auth_claims: dict[str, Any]):
 @authenticated_path
 async def content_file_original(file: str, auth_claims: Dict[str, Any]):
     path = request.args.get('file', default='', type=str)
-
+    logging.info(f"Opening file {path}")
     AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS = os.environ.get("AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS", "originaldocuments")
     blob_container_client: ContainerClient = current_app.config[AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS]
+    logging.info(f"Container {AZURE_STORAGE_CONTAINER_ORIGINAL_DOCUMENTS}")
     try:
         blob_client = blob_container_client.get_blob_client(path)
- 
+        logging.info(f"Blob {path}")
         # Generate SAS token
         sas_token = generate_blob_sas(
             account_name=blob_client.account_name,
@@ -437,10 +438,10 @@ async def content_file_original(file: str, auth_claims: Dict[str, Any]):
         )  
             
         blob_url = blob_client.url + "?" + sas_token
-        
+        logging.info(f"Blob URL {blob_url}")
         return jsonify({"url": blob_url}), 200
     except Exception as e:
-        abort(404)
+        return jsonify({'error': str(e)}), 400
     
 
 @bp.before_app_serving

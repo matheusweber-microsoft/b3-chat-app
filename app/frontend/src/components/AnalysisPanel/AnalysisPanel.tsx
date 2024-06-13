@@ -158,7 +158,7 @@ export const AnalysisPanel = ({
                 headerText="Citação"
                 headerButtonProps={isDisabledCitationTab ? pivotItemDisabledStyle : undefined}
             >
-                {subthemeName && (
+                {theme && subthemeName && originalCitationPath.length > 0 && (
                     <div className="breadcrumb-container">
                         <span className="breadcrumb-item">{theme?.themeName}</span>
                         <span className="breadcrumb-separator">-</span>
