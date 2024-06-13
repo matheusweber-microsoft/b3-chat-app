@@ -699,8 +699,9 @@ def create_app():
     app = Quart(__name__)
     app.register_blueprint(bp)
 
-    if os.getenv("APP_INSIGHTS_CONN_STRING"):
-        app_insights_connection_string = os.getenv("APP_INSIGHTS_CONN_STRING")
+    if os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING"):
+        os.environ["OTEL_SERVICE_NAME"] = "aiassistant"
+        app_insights_connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
 
         configure_azure_monitor(connection_string=app_insights_connection_string)
         # This tracks HTTP requests made by aiohttp:
