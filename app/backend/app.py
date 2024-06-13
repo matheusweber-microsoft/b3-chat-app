@@ -163,6 +163,11 @@ async def content_file(file: str, auth_claims: Dict[str, Any]):
     blob_file.seek(0)
     return await send_file(blob_file, mimetype=mime_type, as_attachment=False, attachment_filename=path)
 
+@bp.route("/clearcache", methods=["POST"])
+async def clear_cache():
+    cache.clear()
+    return jsonify({"message": "Cache cleared"}), 200
+
 
 @bp.route("/ask", methods=["POST"])
 @authenticated
@@ -196,7 +201,6 @@ class JSONEncoder(json.JSONEncoder):
 cosmos_repository = None
 
 if os.getenv("MONGODB_CONN_STRING"):
-        KEY_VAULT_COSMOS_DB_NAME = os.getenv('KEY_VAULT_COSMOS_DB_NAME')
         DATABASE_NAME = os.getenv('DATABASE_NAME')
         CONN_STRING = os.getenv('MONGODB_CONN_STRING')
         cosmos_repository = CosmosRepository(connection_string=CONN_STRING, database_name=DATABASE_NAME)
@@ -729,8 +733,9 @@ def create_app():
     app = Quart(__name__)
     app.register_blueprint(bp)
 
-    if os.getenv("APP_INSIGHTS_CONN_STRING"):
-        app_insights_connection_string = os.getenv("APP_INSIGHTS_CONN_STRING")
+    if os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING"):
+        os.environ["OTEL_SERVICE_NAME"] = "aiassistant"
+        app_insights_connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
 
         configure_azure_monitor(connection_string=app_insights_connection_string)
         # This tracks HTTP requests made by aiohttp:
